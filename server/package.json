@@ -1,0 +1,14 @@
+{
+  "name": "planner-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.1",
+    "better-sqlite3": "^11.3.0",
+    "hono": "^4.6.3"
+  }
+}
