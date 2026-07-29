@@ -10,7 +10,10 @@ export default function Card({ title, accent, to, linkLabel = 'open →', sticke
           {sticker}
         </span>
       )}
-      <header className="card-header">
+      <header
+        className="card-header"
+        style={accent ? { borderBottom: `2px solid var(--accent-${accent}-soft)` } : undefined}
+      >
         <h2 className="card-title">
           {accent && (
             <span

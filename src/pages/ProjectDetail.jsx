@@ -15,6 +15,7 @@ import {
 import { logicalDay, addDays } from '../db/time.js';
 import { floatPoints, confettiBurst } from '../fx.js';
 import Check from '../components/Check.jsx';
+import ColorPicker from '../components/ColorPicker.jsx';
 import { StaleBadge } from './Studio.jsx';
 import { staleness } from '../db/selectors.js';
 
@@ -70,6 +71,14 @@ export default function ProjectDetail() {
       </h1>
 
       <EditableDescription project={project} />
+
+      <div className="row spread wrap" style={{ marginBottom: 'var(--space-3)' }}>
+        <ColorPicker
+          value={project.color ?? '4'}
+          onChange={(c) => updateProject(id, { color: c ?? '4' })}
+          allowAuto={false}
+        />
+      </div>
 
       <button className={`btn${touchedToday ? '' : ' primary'}`} onClick={toggleTouch}>
         {touchedToday ? '✓ Worked on it today' : 'Worked on it today?'}

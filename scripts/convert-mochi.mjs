@@ -72,6 +72,7 @@ for (const t of src.tasks ?? []) {
       title: t.text,
       size: TIER[t.tier] ?? 'M',
       notes: subs || null,
+      color: accentFromHex(t.color),
       done_at: t.done ? src.lastBackup ?? NOW : null,
       sort_order: order++,
     })
@@ -83,6 +84,7 @@ for (const q of src.quests ?? []) {
       title: q.text,
       size: TIER[q.tier] ?? 'S',
       notes: null,
+      color: accentFromHex(q.color),
       done_at: null,
       sort_order: order++,
     })
@@ -97,7 +99,13 @@ src.habits?.forEach((h, i) => {
     .map((d) => new Date(`${pad(d)}T12:00:00`).getTime())
     .sort((a, b) => a - b)[0];
   T('habits').push(
-    row(h.id, firstEntry ?? null, { name: h.text, emoji: null, active: 1, sort_order: i + 1 })
+    row(h.id, firstEntry ?? null, {
+      name: h.text,
+      emoji: null,
+      color: accentFromHex(h.color),
+      active: 1,
+      sort_order: i + 1,
+    })
   );
   for (const d of h.hist ?? []) {
     const day = pad(d);

@@ -3,6 +3,7 @@ import { db } from '../db/db.js';
 import { uncompleteTask, SIZE_POINTS } from '../db/actions.js';
 import { logicalDay, prettyDay } from '../db/time.js';
 import Check from '../components/Check.jsx';
+import { itemAccent } from '../components/ColorPicker.jsx';
 
 export default function TasksDone() {
   const tasks = useLiveQuery(
@@ -35,9 +36,9 @@ export default function TasksDone() {
           <h2 className="muted display" style={{ marginBottom: 'var(--space-2)' }}>
             {prettyDay(g.day)}
           </h2>
-          {g.tasks.map((t) => (
+          {g.tasks.map((t, i) => (
             <div className="list-item done" key={t.id}>
-              <Check on accent={2} onClick={() => uncompleteTask(t)} label={`Un-complete ${t.title}`} />
+              <Check on accent={itemAccent(t, i)} onClick={() => uncompleteTask(t)} label={`Un-complete ${t.title}`} />
               <div className="grow">
                 <div className="item-title">{t.title}</div>
               </div>

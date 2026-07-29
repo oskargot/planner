@@ -6,8 +6,7 @@ import { addProject, touchProject, untouchProject } from '../db/actions.js';
 import { logicalDay } from '../db/time.js';
 import { staleness } from '../db/selectors.js';
 import { floatPoints } from '../fx.js';
-
-const PALETTE = [1, 2, 3, 4, 5, 6];
+import ColorPicker from '../components/ColorPicker.jsx';
 
 export default function Studio() {
   const projects = useLiveQuery(
@@ -102,7 +101,7 @@ export function StaleBadge({ stale, touchedToday }) {
 
 function AddProject() {
   const [name, setName] = useState('');
-  const [color, setColor] = useState(4);
+  const [color, setColor] = useState('4');
 
   async function submit(e) {
     e.preventDefault();
@@ -119,24 +118,7 @@ function AddProject() {
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
-      <div className="row" style={{ gap: 'var(--space-1)' }}>
-        {PALETTE.map((n) => (
-          <button
-            key={n}
-            type="button"
-            aria-label={`Accent ${n}`}
-            onClick={() => setColor(n)}
-            style={{
-              width: 22,
-              height: 22,
-              borderRadius: 'var(--radius-full)',
-              background: `var(--accent-${n})`,
-              outline: color === n ? '2px solid var(--text-primary)' : 'none',
-              outlineOffset: 2,
-            }}
-          />
-        ))}
-      </div>
+      <ColorPicker value={color} onChange={(c) => setColor(c ?? '4')} allowAuto={false} />
       <button className="btn primary" type="submit" disabled={!name.trim()}>
         Add
       </button>

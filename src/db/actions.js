@@ -46,12 +46,13 @@ async function reverseSource(sourceId, sourceType, reason, day, note = null) {
 
 // ---- tasks ----
 
-export async function addTask(title, size, notes = null) {
+export async function addTask(title, size, notes = null, color = null) {
   const first = await db.tasks.orderBy('sort_order').first();
   return insertRow('tasks', {
     title,
     size,
     notes,
+    color,
     done_at: null,
     sort_order: (first?.sort_order ?? 1) - 1,
   });
@@ -87,9 +88,15 @@ export async function deleteTask(task) {
 
 // ---- habits ----
 
-export async function addHabit(name, emoji = null) {
+export async function addHabit(name, emoji = null, color = null) {
   const last = await db.habits.orderBy('sort_order').last();
-  return insertRow('habits', { name, emoji, active: 1, sort_order: (last?.sort_order ?? 0) + 1 });
+  return insertRow('habits', {
+    name,
+    emoji,
+    color,
+    active: 1,
+    sort_order: (last?.sort_order ?? 0) + 1,
+  });
 }
 
 export async function updateHabit(id, fields) {

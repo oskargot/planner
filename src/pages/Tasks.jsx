@@ -4,6 +4,10 @@ import { db } from '../db/db.js';
 import { addTask, completeTask, deleteTask, updateTask, SIZE_POINTS } from '../db/actions.js';
 import { floatPoints } from '../fx.js';
 import Check from '../components/Check.jsx';
+import ColorPicker, { itemAccent } from '../components/ColorPicker.jsx';
+
+// Sizes get their own soft tints: bigger = warmer.
+const SIZE_ACCENT = { S: 4, M: 3, L: 1 };
 
 export default function Tasks() {
   const tasks = useLiveQuery(
@@ -24,8 +28,8 @@ export default function Tasks() {
       <AddTask />
       <div style={{ marginTop: 'var(--space-4)' }}>
         {tasks.length === 0 && <p className="empty">Nothing to do. Suspicious.</p>}
-        {tasks.map((t) => (
-          <TaskRow key={t.id} task={t} />
+        {tasks.map((t, i) => (
+          <TaskRow key={t.id} task={t} index={i} />
         ))}
       </div>
     </>
@@ -71,7 +75,10 @@ export function SizePicker({ value, onChange }) {
           onClick={() => onChange(s)}
           style={
             value === s
-              ? { background: 'var(--accent-2-soft)', color: 'var(--text-primary)' }
+              ? {
+                  background: `var(--accent-${SIZE_ACCENT[s]}-soft)`,
+                  color: 'var(--text-primary)',
+                }
               : undefined
           }
           title={`${pts} points`}
@@ -83,8 +90,20 @@ export function SizePicker({ value, onChange }) {
   );
 }
 
-function TaskRow({ task }) {
+export function SizeChip({ size, done = false }) {
+  return (
+    <span
+      className="size-chip"
+      style={done ? undefined : { background: `var(--accent-${SIZE_ACCENT[size]}-soft)` }}
+    >
+      {size}·{SIZE_POINTS[size]}
+    </span>
+  );
+}
+
+function TaskRow({ task, index }) {
   const [editing, setEditing] = useState(false);
+  const accent = itemAccent(task, index);
 
   async function complete(e) {
     floatPoints(e.currentTarget, SIZE_POINTS[task.size]);
@@ -94,15 +113,13 @@ function TaskRow({ task }) {
   if (editing) return <TaskEditor task={task} close={() => setEditing(false)} />;
 
   return (
-    <div className="list-item">
-      <Check on={false} accent={2} onClick={complete} label={`Complete ${task.title}`} />
+    <div className="list-item" style={{ borderLeft: `4px solid var(--accent-${accent})` }}>
+      <Check on={false} accent={accent} onClick={complete} label={`Complete ${task.title}`} />
       <div className="grow" onClick={() => setEditing(true)}>
         <div className="item-title">{task.title}</div>
         {task.notes && <div className="muted">{task.notes}</div>}
       </div>
-      <span className="size-chip">
-        {task.size}·{SIZE_POINTS[task.size]}
-      </span>
+      <SizeChip size={task.size} />
     </div>
   );
 }
@@ -111,10 +128,11 @@ function TaskEditor({ task, close }) {
   const [title, setTitle] = useState(task.title);
   const [size, setSize] = useState(task.size);
   const [notes, setNotes] = useState(task.notes || '');
+  const [color, setColor] = useState(task.color ?? null);
 
   async function save() {
     if (!title.trim()) return;
-    await updateTask(task.id, { title: title.trim(), size, notes: notes.trim() || null });
+    await updateTask(task.id, { title: title.trim(), size, notes: notes.trim() || null, color });
     close();
   }
 
@@ -129,16 +147,19 @@ function TaskEditor({ task, close }) {
       />
       <div className="row spread wrap">
         <SizePicker value={size} onChange={setSize} />
+        <ColorPicker value={color} onChange={setColor} />
+      </div>
+      <div className="row spread">
+        <button
+          className="btn danger"
+          onClick={async () => {
+            await deleteTask(task);
+            close();
+          }}
+        >
+          Delete
+        </button>
         <div className="row" style={{ gap: 'var(--space-2)' }}>
-          <button
-            className="btn danger"
-            onClick={async () => {
-              await deleteTask(task);
-              close();
-            }}
-          >
-            Delete
-          </button>
           <button className="btn ghost" onClick={close}>
             Cancel
           </button>

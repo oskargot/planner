@@ -5,6 +5,7 @@ import { addHabit, updateHabit, deleteHabit, checkHabit, uncheckHabit } from '..
 import { logicalDay, addDays, isEditableDay, prettyDay } from '../db/time.js';
 import { floatPoints, confettiBurst } from '../fx.js';
 import Check from '../components/Check.jsx';
+import ColorPicker, { itemAccent } from '../components/ColorPicker.jsx';
 
 export default function HabitsToday() {
   const [day, setDay] = useState(logicalDay());
@@ -70,14 +71,24 @@ export default function HabitsToday() {
         <p className="empty">No habits yet. Tap ✎ to add your first.</p>
       )}
 
-      {habits.map((h) =>
+      {habits.map((h, i) =>
         manage ? (
-          <HabitEditor key={h.id} habit={h} />
+          <HabitEditor key={h.id} habit={h} index={i} />
         ) : (
-          <div className="list-item" key={h.id} style={{ padding: 'var(--space-4)' }}>
+          <div
+            className="list-item"
+            key={h.id}
+            style={{
+              padding: 'var(--space-4)',
+              borderLeft: `4px solid var(--accent-${itemAccent(h, i)})`,
+              background: doneIds.has(h.id)
+                ? `var(--accent-${itemAccent(h, i)}-soft)`
+                : undefined,
+            }}
+          >
             <Check
               on={doneIds.has(h.id)}
-              accent={3}
+              accent={itemAccent(h, i)}
               round
               disabled={!editable}
               onClick={(e) => toggle(h, e)}
@@ -127,12 +138,15 @@ function AddHabit() {
   );
 }
 
-function HabitEditor({ habit }) {
+function HabitEditor({ habit, index }) {
   const [name, setName] = useState(habit.name);
   const [emoji, setEmoji] = useState(habit.emoji || '');
 
   return (
-    <div className="list-item">
+    <div
+      className="list-item wrap"
+      style={{ borderLeft: `4px solid var(--accent-${itemAccent(habit, index)})` }}
+    >
       <input
         style={{ width: 56, textAlign: 'center' }}
         value={emoji}
@@ -144,6 +158,10 @@ function HabitEditor({ habit }) {
         value={name}
         onChange={(e) => setName(e.target.value)}
         onBlur={() => name.trim() && updateHabit(habit.id, { name: name.trim() })}
+      />
+      <ColorPicker
+        value={habit.color ?? null}
+        onChange={(c) => updateHabit(habit.id, { color: c })}
       />
       <button
         className="btn"

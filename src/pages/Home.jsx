@@ -14,6 +14,8 @@ import { floatPoints, confettiBurst } from '../fx.js';
 import { APP_NAME } from '../config.js';
 import Card from '../components/Card.jsx';
 import Check from '../components/Check.jsx';
+import { itemAccent } from '../components/ColorPicker.jsx';
+import { SizeChip } from './Tasks.jsx';
 
 export default function Home() {
   const balance = useBalance();
@@ -78,11 +80,11 @@ function HabitsCard() {
     <Card title="Habits" accent={3} to="/habits">
       {habits.length === 0 && <p className="empty">No habits yet.</p>}
       <div className="stack-sm">
-        {habits.map((h) => (
+        {habits.map((h, i) => (
           <div className="row" key={h.id}>
             <Check
               on={doneIds.has(h.id)}
-              accent={3}
+              accent={itemAccent(h, i)}
               round
               onClick={(e) => toggle(h, e)}
               label={h.name}
@@ -122,11 +124,11 @@ function TasksCard() {
     <Card title={`Tasks · ${open.length}`} accent={2} to="/tasks">
       {open.length === 0 && <p className="empty">All clear.</p>}
       <div className="stack-sm">
-        {open.slice(0, 5).map((t) => (
+        {open.slice(0, 5).map((t, i) => (
           <div className="row" key={t.id}>
             <Check
               on={false}
-              accent={2}
+              accent={itemAccent(t, i)}
               onClick={async (e) => {
                 floatPoints(e.currentTarget, SIZE_POINTS[t.size]);
                 await completeTask(t);
@@ -134,7 +136,7 @@ function TasksCard() {
               label={`Complete ${t.title}`}
             />
             <span className="grow">{t.title}</span>
-            <span className="size-chip">{t.size}</span>
+            <SizeChip size={t.size} />
           </div>
         ))}
       </div>

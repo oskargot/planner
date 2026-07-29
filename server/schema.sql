@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   title       TEXT NOT NULL,
   size        TEXT NOT NULL,
   notes       TEXT,
+  color       TEXT,                -- accent index '1'..'6', NULL = auto
   done_at     INTEGER,
   sort_order  REAL NOT NULL DEFAULT 0,
   created_at  INTEGER NOT NULL,
@@ -18,6 +19,7 @@ CREATE TABLE IF NOT EXISTS habits (
   id          TEXT PRIMARY KEY,
   name        TEXT NOT NULL,
   emoji       TEXT,
+  color       TEXT,                -- accent index '1'..'6', NULL = auto
   active      INTEGER NOT NULL DEFAULT 1,
   sort_order  REAL NOT NULL DEFAULT 0,
   created_at  INTEGER NOT NULL,

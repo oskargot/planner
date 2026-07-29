@@ -19,10 +19,18 @@ const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 db.exec(readFileSync(join(__dirname, 'schema.sql'), 'utf8'));
 
+// Additive migrations for databases created before a column existed.
+function ensureColumn(table, col, ddl) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all();
+  if (!cols.some((c) => c.name === col)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${ddl}`);
+}
+ensureColumn('tasks', 'color', 'color TEXT');
+ensureColumn('habits', 'color', 'color TEXT');
+
 // Column lists drive the generated upserts; order matters only for VALUES.
 const TABLES = {
-  tasks: ['id', 'title', 'size', 'notes', 'done_at', 'sort_order', 'created_at', 'updated_at', 'deleted'],
-  habits: ['id', 'name', 'emoji', 'active', 'sort_order', 'created_at', 'updated_at', 'deleted'],
+  tasks: ['id', 'title', 'size', 'notes', 'color', 'done_at', 'sort_order', 'created_at', 'updated_at', 'deleted'],
+  habits: ['id', 'name', 'emoji', 'color', 'active', 'sort_order', 'created_at', 'updated_at', 'deleted'],
   habit_entries: ['id', 'habit_id', 'day', 'created_at', 'updated_at', 'deleted'],
   projects: ['id', 'name', 'description', 'color', 'status', 'sort_order', 'created_at', 'updated_at', 'deleted'],
   milestones: ['id', 'project_id', 'title', 'done_at', 'sort_order', 'created_at', 'updated_at', 'deleted'],
