@@ -16,11 +16,12 @@ export function useBalance() {
 }
 
 export function useEarnedToday() {
+  // Net earnings: undo rows subtract, spending doesn't count against you.
   return useLiveQuery(async () => {
     const today = logicalDay();
     let sum = 0;
     await db.ledger.where('day').equals(today).each((r) => {
-      if (!r.deleted && r.delta > 0) sum += r.delta;
+      if (!r.deleted && r.reason !== 'purchase') sum += r.delta;
     });
     return sum;
   }, [], 0);

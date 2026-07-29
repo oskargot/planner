@@ -62,14 +62,19 @@ export async function updateTask(id, fields) {
 }
 
 export async function completeTask(task) {
-  const pts = SIZE_POINTS[task.size] ?? 0;
+  // Re-read so a double-tap can't award twice.
+  const fresh = await db.tasks.get(task.id);
+  if (!fresh || fresh.deleted || fresh.done_at) return;
+  const pts = SIZE_POINTS[fresh.size] ?? 0;
   await updateRow('tasks', task.id, { done_at: Date.now() });
-  await addLedger({ delta: pts, reason: 'task', sourceType: 'tasks', sourceId: task.id, day: logicalDay(), note: task.title });
+  await addLedger({ delta: pts, reason: 'task', sourceType: 'tasks', sourceId: task.id, day: logicalDay(), note: fresh.title });
 }
 
 export async function uncompleteTask(task) {
+  const fresh = await db.tasks.get(task.id);
+  if (!fresh || fresh.deleted || !fresh.done_at) return;
   await updateRow('tasks', task.id, { done_at: null });
-  await reverseSource(task.id, 'tasks', 'task', logicalDay(), `undo: ${task.title}`);
+  await reverseSource(task.id, 'tasks', 'task', logicalDay(), `undo: ${fresh.title}`);
 }
 
 export async function deleteTask(task) {

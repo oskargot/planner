@@ -109,7 +109,10 @@ export function scheduleSync() {
   debounceTimer = setTimeout(syncNow, 2000); // debounced ~2s after any write
 }
 
+let started = false;
 export function startSync() {
+  if (started) return; // StrictMode double-mounts effects in dev
+  started = true;
   setOnWrite(scheduleSync);
   syncNow(); // on load
   window.addEventListener('online', syncNow);
