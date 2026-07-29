@@ -142,6 +142,19 @@ app.post('/api/sync', async (c) => {
 
 app.get('/api/health', (c) => c.json({ ok: true }));
 
+// Cache policy: hashed assets are immutable; everything else (index.html,
+// sw.js, manifest) must revalidate every time or Safari happily serves a
+// stale app shell and updates never land.
+app.use('*', async (c, next) => {
+  await next();
+  if (c.req.path.startsWith('/api/')) return;
+  if (c.req.path.startsWith('/assets/')) {
+    c.res.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+  } else {
+    c.res.headers.set('Cache-Control', 'no-cache');
+  }
+});
+
 // Production: serve the built client from ../dist, SPA-fallback to index.html.
 // serveStatic paths are cwd-relative, so anchor them to this file's location.
 const DIST = relative(process.cwd(), join(__dirname, '..', 'dist')) || '.';
