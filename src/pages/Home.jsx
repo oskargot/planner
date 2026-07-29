@@ -32,7 +32,7 @@ export default function Home() {
             <div className="balance">✦ {balance ?? '…'}</div>
             <div className="muted small">+{earned} today</div>
           </Link>
-          <Link to="/settings" className="icon-btn" aria-label="Settings">
+          <Link to="/settings" className="settings-btn" aria-label="Settings">
             ⚙︎
           </Link>
         </div>

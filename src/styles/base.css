@@ -303,6 +303,20 @@ h1, h2, h3 {
 
 .home-header { margin-bottom: var(--space-4); }
 
+.home-header .settings-btn {
+  font-size: var(--size-2xl);
+  line-height: 1;
+  padding: var(--space-2);
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  border-radius: var(--radius-full);
+}
+.home-header .settings-btn:active { background: var(--bg-sunken); }
+
 .header-points {
   text-align: right;
   line-height: var(--leading-tight);
