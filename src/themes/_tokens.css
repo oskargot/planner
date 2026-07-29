@@ -1,0 +1,105 @@
+/*
+ * The token contract (§8). Every visual value used anywhere in the app is one
+ * of these custom properties. Themes (paper.css, mono.css, …) redefine them
+ * under [data-theme="…"]. The :root block below is the documented fallback —
+ * a deliberately plain grayscale so a missing token is visible, not invisible.
+ *
+ * Rules:
+ *  - Component CSS may ONLY reference these variables. No literal colors,
+ *    shadows, radii, fonts, or textures outside theme files.
+ *  - Themes may override their own tokens at small widths (mobile flattening).
+ *  - New tokens get added here first, with a fallback, then to each theme.
+ */
+
+:root {
+  /* surfaces */
+  --bg-page: #e8e8e8;          /* the page behind everything */
+  --bg-surface: #ffffff;       /* cards, sheets */
+  --bg-surface-alt: #f4f4f4;   /* nested panels on a surface */
+  --bg-sunken: #dcdcdc;        /* wells: empty heat cells, progress troughs */
+
+  /* text */
+  --text-primary: #1a1a1a;
+  --text-secondary: #4d4d4d;
+  --text-muted: #8a8a8a;
+  --text-inverse: #ffffff;
+
+  /* rainbow accents — the spine of the palette, in spectrum order.
+     Each nav section owns one; the heat map ramps across them. */
+  --accent-1: #b0b0b0;
+  --accent-2: #a0a0a0;
+  --accent-3: #909090;
+  --accent-4: #808080;
+  --accent-5: #707070;
+  --accent-6: #606060;
+  --accent-1-soft: #e0e0e0;
+  --accent-2-soft: #d8d8d8;
+  --accent-3-soft: #d0d0d0;
+  --accent-4-soft: #c8c8c8;
+  --accent-5-soft: #c0c0c0;
+  --accent-6-soft: #b8b8b8;
+
+  /* semantic */
+  --color-success: #3f7d47;
+  --color-warn: #a06a1f;
+  --color-danger: #a03030;
+  --color-points: #6b5b1e;
+
+  /* heat map ramp, empty → full. 0 is the empty cell. */
+  --heat-0: var(--bg-sunken);
+  --heat-1: #d5d5d5;
+  --heat-2: #c0c0c0;
+  --heat-3: #a8a8a8;
+  --heat-4: #8f8f8f;
+  --heat-5: #737373;
+  --heat-6: #555555;
+
+  /* structure */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-full: 999px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 6px 18px rgba(0, 0, 0, 0.12);
+  --border-hairline: 1px solid rgba(0, 0, 0, 0.12);
+  --border-color: rgba(0, 0, 0, 0.12);
+
+  /* texture — background-image values; flat themes set these to none */
+  --texture-page: none;
+  --texture-card: none;
+
+  /* type */
+  --font-display: system-ui, sans-serif;
+  --font-body: system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --size-xs: 0.75rem;
+  --size-sm: 0.875rem;
+  --size-md: 1rem;
+  --size-lg: 1.125rem;
+  --size-xl: 1.375rem;
+  --size-2xl: 1.75rem;
+  --weight-normal: 400;
+  --weight-medium: 600;
+  --weight-bold: 700;
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-loose: 1.75;
+
+  /* space */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+
+  /* motion */
+  --ease-standard: cubic-bezier(0.2, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 120ms;
+  --dur-normal: 220ms;
+  --dur-slow: 400ms;
+}

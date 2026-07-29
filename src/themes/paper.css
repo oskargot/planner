@@ -1,0 +1,77 @@
+/*
+ * "Paper" — the default skin (§8). Digital bullet journal: warm off-white
+ * page, cards floating on soft shadows, pastel rainbow accents, rounded
+ * geometric display type. No handwriting fonts.
+ */
+
+[data-theme='paper'] {
+  /* surfaces */
+  --bg-page: #f6f1e7;
+  --bg-surface: #fdfbf6;
+  --bg-surface-alt: #f3ede1;
+  --bg-sunken: #eae3d4;
+
+  /* text */
+  --text-primary: #3a3630;
+  --text-secondary: #6b6459;
+  --text-muted: #9d9484;
+  --text-inverse: #fdfbf6;
+
+  /* pastel rainbow, spectrum order */
+  --accent-1: #e8827c; /* red    */
+  --accent-2: #e9a05c; /* orange */
+  --accent-3: #d9b83f; /* yellow */
+  --accent-4: #7cb47a; /* green  */
+  --accent-5: #6fa3cf; /* blue   */
+  --accent-6: #a98bc8; /* violet */
+  --accent-1-soft: #f7ddd9;
+  --accent-2-soft: #f7e4d0;
+  --accent-3-soft: #f4ecc9;
+  --accent-4-soft: #ddebd8;
+  --accent-5-soft: #dbe7f2;
+  --accent-6-soft: #e8dff1;
+
+  /* semantic */
+  --color-success: #4f8a54;
+  --color-warn: #c07f2a;
+  --color-danger: #c25450;
+  --color-points: #c99a2e;
+
+  /* heat ramp: pastel-empty through saturated-full, riding the rainbow */
+  --heat-0: var(--bg-sunken);
+  --heat-1: #f2e3d3;
+  --heat-2: #f4d9b8;
+  --heat-3: #eecf8e;
+  --heat-4: #b7d195;
+  --heat-5: #82bb90;
+  --heat-6: #5da3b8;
+
+  /* structure */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+  --shadow-sm: 0 1px 2px rgba(90, 76, 50, 0.1);
+  --shadow-md: 0 2px 8px rgba(90, 76, 50, 0.12);
+  --shadow-lg: 0 8px 24px rgba(90, 76, 50, 0.16);
+  --border-hairline: 1px solid rgba(90, 76, 50, 0.14);
+  --border-color: rgba(90, 76, 50, 0.14);
+
+  /* faint paper tooth on the page; cards stay clean */
+  --texture-page: radial-gradient(rgba(90, 76, 50, 0.045) 1px, transparent 1px);
+  --texture-card: none;
+
+  /* type: rounded geometric display, humanist body */
+  --font-display: 'Quicksand', ui-rounded, system-ui, sans-serif;
+  --font-body: 'Nunito Sans', system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Mobile flattening: same palette, less texture, more contrast (§8). */
+@media (max-width: 600px) {
+  [data-theme='paper'] {
+    --texture-page: none;
+    --shadow-md: var(--shadow-sm);
+    --text-secondary: #57503f;
+  }
+}
