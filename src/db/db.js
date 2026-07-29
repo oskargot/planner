@@ -34,7 +34,15 @@ export const SYNC_TABLES = [
 
 export const SYNCED_META_KEYS = ['day_rollover_hour'];
 
-export const uuid = () => crypto.randomUUID();
+// crypto.randomUUID needs Safari 15.4+; fall back to getRandomValues.
+export const uuid = () => {
+  if (crypto.randomUUID) return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const h = [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+};
 
 // sync.js registers itself here so every local write schedules a push,
 // without a circular import.

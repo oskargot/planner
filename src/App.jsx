@@ -19,17 +19,35 @@ import ShopInventory from './pages/ShopInventory.jsx';
 import ShopLedger from './pages/ShopLedger.jsx';
 import Settings from './pages/Settings.jsx';
 
+const DEFAULT_SETTINGS = { theme: 'paper', motion: true };
+
 export default function App() {
   const location = useLocation();
   const [ready, setReady] = useState(false);
+  const [bootError, setBootError] = useState(null);
 
   useEffect(() => {
-    loadSettings().then((s) => {
+    // Older iOS Safari can hang the first IndexedDB open after a cold start.
+    // Never let that (or any DB failure) keep the app on a blank screen:
+    // race a timeout, fall back to defaults, and say what happened.
+    let settled = false;
+    const finish = (s, err) => {
+      if (settled) return;
+      settled = true;
       document.documentElement.dataset.theme = s.theme;
       document.documentElement.dataset.motion = s.motion ? 'on' : 'off';
+      if (err) setBootError(String(err?.message || err));
       setReady(true);
       startSync();
-    });
+    };
+    const timer = setTimeout(
+      () => finish(DEFAULT_SETTINGS, 'Local database is slow to open — retrying in the background.'),
+      4000
+    );
+    loadSettings()
+      .then((s) => finish(s, null))
+      .catch((e) => finish(DEFAULT_SETTINGS, e))
+      .finally(() => clearTimeout(timer));
   }, []);
 
   // Directional slide between sections: left if moving to a later tab.
@@ -41,10 +59,16 @@ export default function App() {
     prevIndex.current = sectionIndex;
   }, [sectionIndex]);
 
-  if (!ready) return null;
+  // Visible placeholder — a broken boot must look broken, not blank.
+  if (!ready) return <div className="empty">Loading…</div>;
 
   return (
     <div className="app">
+      {bootError && (
+        <div className="locked-note" role="alert">
+          ⚠️ {bootError}
+        </div>
+      )}
       <SyncDot />
       <main className="page" key={section.id} data-dir={dir}>
         <div className={`page-inner page-slide-${dir}`}>
