@@ -512,6 +512,7 @@ h1, h2, h3 {
 .heat-cell.outside { visibility: hidden; }
 .heat-cell.selected { outline: 2px solid var(--text-primary); }
 .heat-cell.future { opacity: 0.35; }
+.heat-cell.today { box-shadow: inset 0 0 0 2px var(--accent-3); }
 
 .heat-strip {
   display: grid;
@@ -576,26 +577,29 @@ h1, h2, h3 {
 .shop-item.unaffordable { opacity: 0.6; }
 .shop-item.soldout { opacity: 0.45; filter: grayscale(1); }
 
-/* ---------- sync dot ---------- */
+/* ---------- mini month calendar (Home habits card) ---------- */
 
-.sync-dot {
-  position: fixed;
-  top: calc(var(--space-2) + env(safe-area-inset-top));
-  right: var(--space-2);
-  z-index: 50;
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-full);
-  background: var(--text-muted);
-  opacity: 0.5;
+.mini-month {
+  display: block;
+  margin-bottom: var(--space-3);
 }
-.sync-dot.synced { background: var(--color-success); }
-.sync-dot.syncing { background: var(--color-warn); animation: sync-pulse 1s infinite; }
-.sync-dot.offline { background: var(--text-muted); }
-.sync-dot.error { background: var(--color-danger); }
 
-@keyframes sync-pulse {
-  50% { opacity: 0.2; }
+.mini-month .heat-grid {
+  gap: 3px;
+}
+
+.mini-month .heat-cell {
+  font-size: var(--size-xs);
+  border-radius: var(--radius-sm);
+}
+
+.mini-month .month-label {
+  font-family: var(--font-display);
+  font-weight: var(--weight-medium);
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: var(--space-2);
 }
 
 /* ---------- forms / sheets ---------- */

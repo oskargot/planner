@@ -8,7 +8,7 @@ import {
   touchProject,
   SIZE_POINTS,
 } from '../db/actions.js';
-import { logicalDay, addDays } from '../db/time.js';
+import { logicalDay, parseDay, monthLabel } from '../db/time.js';
 import { useBalance, useEarnedToday, habitDayStats, heatVar, staleness } from '../db/selectors.js';
 import { floatPoints, confettiBurst } from '../fx.js';
 import { APP_NAME } from '../config.js';
@@ -47,7 +47,8 @@ export default function Home() {
   );
 }
 
-// "Habits extended": today's checkable rows plus the compressed heat strip.
+// "Habits extended": the current month as a proper calendar on top, then
+// today's checkable rows — the list below can grow as long as it likes.
 function HabitsCard() {
   const today = logicalDay();
   const habits = useLiveQuery(
@@ -62,9 +63,14 @@ function HabitsCard() {
   );
   const doneIds = new Set(entries.map((e) => e.habit_id));
 
-  // Last 5 whole weeks, ending today.
-  const start = addDays(today, -34);
-  const days = Array.from({ length: 35 }, (_, i) => addDays(start, i));
+  const d = parseDay(today);
+  const year = d.getFullYear();
+  const month = d.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const days = Array.from({ length: daysInMonth }, (_, i) => {
+    return `${year}-${String(month + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`;
+  });
+  const offset = (new Date(year, month, 1).getDay() + 6) % 7; // Monday-first
   const stats = useLiveQuery(() => habitDayStats(days), [today], null);
 
   async function toggle(h, e) {
@@ -78,6 +84,37 @@ function HabitsCard() {
 
   return (
     <Card title="Habits" accent={3} to="/habits">
+      <Link to="/habits/month" className="mini-month" aria-label="Open month view">
+        <div className="month-label">{monthLabel(year, month)}</div>
+        <div className="heat-grid">
+          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((w, i) => (
+            <div key={`w${i}`} className="muted" style={{ textAlign: 'center', fontSize: 'var(--size-xs)' }}>
+              {w}
+            </div>
+          ))}
+          {Array.from({ length: offset }, (_, i) => (
+            <div key={`pad${i}`} className="heat-cell outside" />
+          ))}
+          {days.map((day) => {
+            const future = day > today;
+            const cls = `heat-cell${future ? ' future' : ''}${day === today ? ' today' : ''}`;
+            return (
+              <div
+                key={day}
+                className={cls}
+                title={day}
+                style={{
+                  background: future
+                    ? undefined
+                    : heatVar(stats?.get(day)?.ratio ?? 0, stats?.get(day)?.done ?? 0),
+                }}
+              >
+                {Number(day.slice(-2))}
+              </div>
+            );
+          })}
+        </div>
+      </Link>
       {habits.length === 0 && <p className="empty">No habits yet.</p>}
       <div className="stack-sm">
         {habits.map((h, i) => (
@@ -94,21 +131,6 @@ function HabitsCard() {
           </div>
         ))}
       </div>
-      <Link
-        to="/habits/month"
-        className="heat-strip"
-        aria-label="Open month view"
-        style={{ marginTop: 'var(--space-3)' }}
-      >
-        {days.map((d) => (
-          <div
-            key={d}
-            className="heat-cell"
-            title={d}
-            style={{ background: heatVar(stats?.get(d)?.ratio ?? 0, stats?.get(d)?.done ?? 0) }}
-          />
-        ))}
-      </Link>
     </Card>
   );
 }

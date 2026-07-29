@@ -4,7 +4,6 @@ import { NAV, matchNav } from './config.js';
 import { loadSettings } from './db/db.js';
 import { startSync } from './db/sync.js';
 import NavBar from './components/NavBar.jsx';
-import SyncDot from './components/SyncDot.jsx';
 
 import Home from './pages/Home.jsx';
 import Tasks from './pages/Tasks.jsx';
@@ -69,7 +68,6 @@ export default function App() {
           ⚠️ {bootError}
         </div>
       )}
-      <SyncDot />
       <main className="page" key={section.id} data-dir={dir}>
         <div className={`page-inner page-slide-${dir}`}>
           <Routes>
