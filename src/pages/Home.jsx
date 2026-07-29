@@ -196,7 +196,7 @@ function HeatStripCard() {
   const stats = useLiveQuery(() => habitDayStats(days), [today], null);
 
   return (
-    <Card title="Heat" accent={6} to="/habits/month" linkLabel="month →">
+    <Card title="Habits" accent={6} to="/habits/month" linkLabel="month →">
       <div className="heat-strip">
         {days.map((d) => (
           <div
