@@ -16,58 +16,36 @@ import Card from '../components/Card.jsx';
 import Check from '../components/Check.jsx';
 
 export default function Home() {
+  const balance = useBalance();
+  const earned = useEarnedToday();
+
   return (
     <>
-      <header className="row spread" style={{ marginBottom: 'var(--space-4)' }}>
+      <header className="row spread home-header">
         <h1 className="display" style={{ fontSize: 'var(--size-2xl)' }}>
           {APP_NAME}
         </h1>
-        <Link to="/settings" className="icon-btn" aria-label="Settings">
-          ⚙︎
-        </Link>
+        <div className="row" style={{ gap: 'var(--space-3)' }}>
+          <Link to="/shop/ledger" className="header-points" aria-label="Points">
+            <div className="balance">✦ {balance ?? '…'}</div>
+            <div className="muted small">+{earned} today</div>
+          </Link>
+          <Link to="/settings" className="icon-btn" aria-label="Settings">
+            ⚙︎
+          </Link>
+        </div>
       </header>
       <div className="home-grid">
-        <PointsCard />
         <HabitsCard />
         <TasksCard />
         <StudioCard />
-        <HeatStripCard />
         <InventoryCard />
       </div>
     </>
   );
 }
 
-function PointsCard() {
-  const balance = useBalance();
-  const earned = useEarnedToday();
-  const cheapest = useLiveQuery(
-    async () => {
-      const items = await db.shop_items
-        .filter((i) => !i.deleted && !i.sold_out)
-        .toArray();
-      items.sort((a, b) => a.cost - b.cost);
-      return items.find((i) => i.cost <= (balance ?? 0)) || null;
-    },
-    [balance],
-    null
-  );
-
-  return (
-    <Card title="Points" accent={5} to="/shop" linkLabel="shop →" sticker="✦">
-      <div className="display bold" style={{ fontSize: 'var(--size-2xl)', color: 'var(--color-points)' }}>
-        ✦ {balance ?? '…'}
-      </div>
-      <div className="muted">+{earned} earned today</div>
-      {cheapest && (
-        <div className="small secondary" style={{ marginTop: 'var(--space-2)' }}>
-          You can afford <b>{cheapest.name}</b> (✦ {cheapest.cost})
-        </div>
-      )}
-    </Card>
-  );
-}
-
+// "Habits extended": today's checkable rows plus the compressed heat strip.
 function HabitsCard() {
   const today = logicalDay();
   const habits = useLiveQuery(
@@ -82,6 +60,11 @@ function HabitsCard() {
   );
   const doneIds = new Set(entries.map((e) => e.habit_id));
 
+  // Last 5 whole weeks, ending today.
+  const start = addDays(today, -34);
+  const days = Array.from({ length: 35 }, (_, i) => addDays(start, i));
+  const stats = useLiveQuery(() => habitDayStats(days), [today], null);
+
   async function toggle(h, e) {
     if (doneIds.has(h.id)) await uncheckHabit(h.id, today);
     else {
@@ -92,7 +75,7 @@ function HabitsCard() {
   }
 
   return (
-    <Card title="Habits today" accent={3} to="/habits">
+    <Card title="Habits" accent={3} to="/habits">
       {habits.length === 0 && <p className="empty">No habits yet.</p>}
       <div className="stack-sm">
         {habits.map((h) => (
@@ -109,6 +92,21 @@ function HabitsCard() {
           </div>
         ))}
       </div>
+      <Link
+        to="/habits/month"
+        className="heat-strip"
+        aria-label="Open month view"
+        style={{ marginTop: 'var(--space-3)' }}
+      >
+        {days.map((d) => (
+          <div
+            key={d}
+            className="heat-cell"
+            title={d}
+            style={{ background: heatVar(stats?.get(d)?.ratio ?? 0, stats?.get(d)?.done ?? 0) }}
+          />
+        ))}
+      </Link>
     </Card>
   );
 }
@@ -121,10 +119,10 @@ function TasksCard() {
   );
 
   return (
-    <Card title={`Tasks · ${open.length} open`} accent={2} to="/tasks">
+    <Card title={`Tasks · ${open.length}`} accent={2} to="/tasks">
       {open.length === 0 && <p className="empty">All clear.</p>}
       <div className="stack-sm">
-        {open.slice(0, 4).map((t) => (
+        {open.slice(0, 5).map((t) => (
           <div className="row" key={t.id}>
             <Check
               on={false}
@@ -160,7 +158,7 @@ function StudioCard() {
     .slice(0, 4);
 
   return (
-    <Card title="Studio" accent={4} to="/studio">
+    <Card title="Studio" accent={4} to="/studio" className="wide">
       {projects.length === 0 && <p className="empty">No projects yet.</p>}
       {projects.length > 0 && rows.length === 0 && (
         <p className="empty">Everything touched today. 🌟</p>
@@ -188,29 +186,6 @@ function StudioCard() {
   );
 }
 
-function HeatStripCard() {
-  const today = logicalDay();
-  // Last 5 whole weeks, aligned Monday-first, ending today.
-  const start = addDays(today, -34);
-  const days = Array.from({ length: 35 }, (_, i) => addDays(start, i));
-  const stats = useLiveQuery(() => habitDayStats(days), [today], null);
-
-  return (
-    <Card title="Habits" accent={6} to="/habits/month" linkLabel="month →">
-      <div className="heat-strip">
-        {days.map((d) => (
-          <div
-            key={d}
-            className="heat-cell"
-            title={d}
-            style={{ background: heatVar(stats?.get(d)?.ratio ?? 0, stats?.get(d)?.done ?? 0) }}
-          />
-        ))}
-      </div>
-    </Card>
-  );
-}
-
 function InventoryCard() {
   const unredeemed = useLiveQuery(
     () => db.purchases.filter((p) => !p.deleted && !p.redeemed_at).toArray(),
@@ -219,7 +194,7 @@ function InventoryCard() {
   );
   if (unredeemed.length === 0) return null;
   return (
-    <Card title="Inventory" accent={1} to="/shop/inventory" sticker="📦">
+    <Card title="Inventory" accent={1} to="/shop/inventory" sticker="📦" className="wide">
       <div className="stack-sm">
         {unredeemed.map((p) => (
           <div className="row" key={p.id}>

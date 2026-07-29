@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom';
 
 // Dashboard card with the consistent header pattern (§7): title + link into
 // the section. Optional decorative sticker (§8).
-export default function Card({ title, accent, to, linkLabel = 'open →', sticker, children }) {
+export default function Card({ title, accent, to, linkLabel = 'open →', sticker, className = '', children }) {
   return (
-    <section className="card">
+    <section className={`card ${className}`}>
       {sticker && (
         <span className="card-sticker" aria-hidden="true">
           {sticker}

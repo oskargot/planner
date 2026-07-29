@@ -1,31 +1,29 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { NAV, matchNav, sectionPath } from '../config.js';
 
-// Three stacked rows, bottom of screen (§6): sub-sub tabs (if any), sub tabs
-// (if any), section tabs (always). Entirely driven by the NAV config.
+// Two renderings of the same NAV config, toggled purely by CSS breakpoint:
+// narrow screens get the stacked bottom bar (§6), wide screens get a left
+// rail so the content area keeps its height (Oskar's iPad markup).
 export default function NavBar() {
   const location = useLocation();
   const { section, child } = matchNav(location.pathname);
+
+  return (
+    <>
+      <BottomBar section={section} child={child} />
+      <Rail section={section} child={child} />
+    </>
+  );
+}
+
+function BottomBar({ section, child }) {
   const subTabs = section.children || null;
   const subSubTabs = child?.children || null;
 
   return (
-    <nav className="nav">
-      {subSubTabs && <TabRow tabs={subSubTabs} accent={section.accent} activeId={null} />}
-      {subTabs && (
-        <div className="nav-row sub" style={accentVars(section.accent)}>
-          {subTabs.map((t) => (
-            <NavLink
-              key={t.id}
-              to={t.path}
-              end
-              className={t.id === child?.id ? 'nav-subtab active' : 'nav-subtab'}
-            >
-              {t.label}
-            </NavLink>
-          ))}
-        </div>
-      )}
+    <nav className="nav nav-bottom">
+      {subSubTabs && <SubRow tabs={subSubTabs} accent={section.accent} activeId={null} />}
+      {subTabs && <SubRow tabs={subTabs} accent={section.accent} activeId={child?.id} />}
       <div className="nav-row">
         {NAV.map((s) => (
           <NavLink
@@ -43,15 +41,52 @@ export default function NavBar() {
   );
 }
 
-function TabRow({ tabs, accent }) {
+function SubRow({ tabs, accent, activeId }) {
   return (
     <div className="nav-row sub" style={accentVars(accent)}>
       {tabs.map((t) => (
-        <NavLink key={t.id} to={t.path} className="nav-subtab">
+        <NavLink
+          key={t.id}
+          to={t.path}
+          end
+          className={t.id === activeId ? 'nav-subtab active' : 'nav-subtab'}
+        >
           {t.label}
         </NavLink>
       ))}
     </div>
+  );
+}
+
+function Rail({ section, child }) {
+  return (
+    <nav className="nav nav-rail">
+      {NAV.map((s) => {
+        const active = s.id === section.id;
+        return (
+          <div key={s.id} className="rail-group" style={accentVars(s.accent)}>
+            <NavLink
+              to={sectionPath(s)}
+              className={active ? 'rail-tab active' : 'rail-tab'}
+            >
+              <span className="nav-icon" aria-hidden="true">{s.icon}</span>
+              <span className="rail-label">{s.label}</span>
+            </NavLink>
+            {active &&
+              s.children?.map((t) => (
+                <NavLink
+                  key={t.id}
+                  to={t.path}
+                  end
+                  className={t.id === child?.id ? 'rail-subtab active' : 'rail-subtab'}
+                >
+                  {t.label}
+                </NavLink>
+              ))}
+          </div>
+        );
+      })}
+    </nav>
   );
 }
 

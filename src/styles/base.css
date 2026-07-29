@@ -110,13 +110,76 @@ h1, h2, h3 {
   display: inline-block;
 }
 
-/* ---------- bottom nav ---------- */
+/* ---------- nav: bottom bar (narrow) / left rail (wide) ---------- */
 
 .nav {
   flex-shrink: 0;
   background: var(--bg-surface);
+}
+
+.nav-bottom {
   border-top: var(--border-hairline);
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+.nav-rail { display: none; }
+
+@media (min-width: 900px) {
+  .app { flex-direction: row; }
+  .nav-bottom { display: none; }
+  .nav-rail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    order: -1;
+    width: 96px;
+    padding: var(--space-4) var(--space-2);
+    padding-left: calc(var(--space-2) + env(safe-area-inset-left));
+    border-right: var(--border-hairline);
+    overflow-y: auto;
+  }
+}
+
+.rail-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.rail-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-2) var(--space-1);
+  border-radius: var(--radius-md);
+  border-left: 3px solid transparent;
+  font-family: var(--font-display);
+  font-size: var(--size-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
+}
+
+.rail-tab .nav-icon { font-size: var(--size-xl); line-height: 1.2; }
+
+.rail-tab.active {
+  color: var(--text-primary);
+  background: var(--tab-accent-soft, var(--bg-sunken));
+  border-left-color: var(--tab-accent, var(--accent-1));
+}
+
+.rail-subtab {
+  text-align: center;
+  font-size: var(--size-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+}
+
+.rail-subtab.active {
+  background: var(--tab-accent-soft, var(--bg-sunken));
+  color: var(--text-primary);
 }
 
 .nav-row {
@@ -219,17 +282,32 @@ h1, h2, h3 {
   50% { transform: rotate(4deg) translateY(-3px); }
 }
 
+/* Phone: habits + tasks share the top row, wide cards span both.
+   Tablet and up: three across. */
 .home-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-4);
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
 }
 .home-grid .card { margin-bottom: 0; }
+.home-grid .card.wide { grid-column: 1 / -1; }
 @media (min-width: 700px) {
-  .home-grid { grid-template-columns: 1fr 1fr; }
+  .home-grid { grid-template-columns: 1fr 1fr 1fr; gap: var(--space-4); }
+  .home-grid .card.wide { grid-column: auto; }
 }
-@media (min-width: 1100px) {
-  .home-grid { grid-template-columns: 1fr 1fr 1fr; }
+
+.home-header { margin-bottom: var(--space-4); }
+
+.header-points {
+  text-align: right;
+  line-height: var(--leading-tight);
+}
+
+.header-points .balance {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--size-xl);
+  color: var(--color-points);
 }
 
 /* ---------- generic bits ---------- */
