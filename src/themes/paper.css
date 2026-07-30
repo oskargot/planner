@@ -1,108 +1,133 @@
 /*
- * "Paper" — the default skin (§8). Digital bullet journal: warm off-white
- * page, cards floating on soft shadows, pastel rainbow accents, rounded
- * geometric display type. No handwriting fonts.
+ * "Paper" — the default skin (§8). Digital bullet journal: cool off-white
+ * page, cards floating on soft shadows, bright pastel rainbow accents,
+ * rounded geometric display type. No handwriting fonts.
+ *
+ * Palette note: this was a warm cream page (#f6f1e7) with dusty, desaturated
+ * accents, which read as sepia — the whole app looked yellow. The page is now
+ * a barely-tinted cool off-white and every accent is a bright, light pastel.
+ * Because those pastels are too light to carry white text, anything that used
+ * to put ink ON an accent fill now uses --on-accent, and anything that used an
+ * accent AS text uses the deeper --accent-N-ink.
  */
 
 [data-theme='paper'] {
-  /* surfaces */
-  --bg-page: #f6f1e7;
-  --bg-surface: #fdfbf6;
-  --bg-surface-alt: #f3ede1;
-  --bg-sunken: #eae3d4;
+  /* surfaces — faintly cool, the paper equivalent of a cold-press sheet */
+  --bg-page: #f7f6fa;
+  --bg-surface: #ffffff;
+  --bg-surface-alt: #f1f0f7;
+  --bg-sunken: #e8e6f1;
 
-  /* text */
-  --text-primary: #3a3630;
-  --text-secondary: #6b6459;
-  --text-muted: #9d9484;
-  --text-inverse: #fdfbf6;
+  /* text: cool near-black rather than the old warm brown */
+  --text-primary: #33303d;
+  --text-secondary: #605c70;
+  --text-muted: #9995a8;
+  --text-inverse: #ffffff;
 
-  /* pastel rainbow, spectrum order */
-  --accent-1: #e8827c; /* red    */
-  --accent-2: #e9a05c; /* orange */
-  --accent-3: #d9b83f; /* yellow */
-  --accent-4: #7cb47a; /* green  */
-  --accent-5: #6fa3cf; /* blue   */
-  --accent-6: #a98bc8; /* violet */
-  --accent-1-soft: #f7ddd9;
-  --accent-2-soft: #f7e4d0;
-  --accent-3-soft: #f4ecc9;
-  --accent-4-soft: #ddebd8;
-  --accent-5-soft: #dbe7f2;
-  --accent-6-soft: #e8dff1;
+  /* bright pastel rainbow, spectrum order */
+  --accent-1: #ff9fb0; /* strawberry */
+  --accent-2: #ffb587; /* peach     */
+  --accent-3: #ffd96e; /* lemon     */
+  --accent-4: #8ed9a6; /* mint      */
+  --accent-5: #86c7f2; /* sky       */
+  --accent-6: #b9a4ec; /* lilac     */
+
+  /* pale tints — card washes, chips, badge fills */
+  --accent-1-soft: #ffe5ea;
+  --accent-2-soft: #ffebdd;
+  --accent-3-soft: #fff3d2;
+  --accent-4-soft: #dcf3e3;
+  --accent-5-soft: #dcedfb;
+  --accent-6-soft: #ebe4fb;
+
+  /* deep versions — the only ones safe as text or a glyph on a light fill */
+  --accent-1-ink: #c2405c;
+  --accent-2-ink: #b05c1c;
+  --accent-3-ink: #8c6a12;
+  --accent-4-ink: #2c7d52;
+  --accent-5-ink: #1e6ea8;
+  --accent-6-ink: #6a4bab;
+
+  /* what sits on top of a full --accent-N fill (checkmarks). Ink, not white:
+     a white tick on mint or lemon is invisible. */
+  --on-accent: #2b2833;
 
   /* semantic */
-  --color-success: #4f8a54;
-  --color-warn: #c07f2a;
-  --color-danger: #c25450;
-  --color-points: #c99a2e;
+  --color-success: #2c7d52;
+  --color-warn: #b05c1c;
+  --color-danger: #c2405c;
+  --color-points: #a8791a;
 
-  /* heat ramp: pastel-empty through saturated-full, riding the rainbow */
+  /* heat ramp: palest pink through the rainbow, gaining saturation as it goes */
   --heat-0: var(--bg-sunken);
-  --heat-1: #f2e3d3;
-  --heat-2: #f4d9b8;
-  --heat-3: #eecf8e;
-  --heat-4: #b7d195;
-  --heat-5: #82bb90;
-  --heat-6: #5da3b8;
+  --heat-1: #ffe0e6;
+  --heat-2: #ffdcc2;
+  --heat-3: #ffe79c;
+  --heat-4: #a9e3bd;
+  --heat-5: #86c7f2;
+  --heat-6: #b9a4ec;
 
   /* structure */
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
   --radius-full: 999px;
-  --shadow-sm: 0 1px 2px rgba(90, 76, 50, 0.1);
-  --shadow-md: 0 2px 8px rgba(90, 76, 50, 0.12);
-  --shadow-lg: 0 8px 24px rgba(90, 76, 50, 0.16);
-  --border-hairline: 1px solid rgba(90, 76, 50, 0.14);
-  --border-color: rgba(90, 76, 50, 0.14);
+  --shadow-sm: 0 1px 2px rgba(60, 54, 84, 0.08);
+  --shadow-md: 0 2px 8px rgba(60, 54, 84, 0.1);
+  --shadow-lg: 0 8px 24px rgba(60, 54, 84, 0.14);
+  --border-hairline: 1px solid rgba(60, 54, 84, 0.12);
+  --border-color: rgba(60, 54, 84, 0.12);
 
   /* faint paper tooth on the page; cards stay clean */
-  --texture-page: radial-gradient(rgba(90, 76, 50, 0.045) 1px, transparent 1px);
+  --texture-page: radial-gradient(rgba(60, 54, 84, 0.04) 1px, transparent 1px);
   --texture-card: none;
 
   /* Rainbow decoration. The bloom and the card wash are deliberately weak —
-     they should register as "warm and colorful", not as a tint you have to
+     they should register as "light and colorful", not as a tint you have to
      read text through. */
   /* Tilted just off vertical so the six hues band diagonally, and ending on a
      transparent stop so the bloom dissolves instead of stopping at a visible
      line where the background band ends. */
   --gradient-page-glow: linear-gradient(
     165deg,
-    rgba(232, 130, 124, 0.2) 0%,
-    rgba(233, 160, 92, 0.17) 14%,
-    rgba(217, 184, 63, 0.15) 28%,
-    rgba(124, 180, 122, 0.15) 42%,
-    rgba(111, 163, 207, 0.16) 56%,
-    rgba(169, 139, 200, 0.16) 70%,
+    rgba(255, 159, 176, 0.2) 0%,
+    rgba(255, 181, 135, 0.17) 14%,
+    rgba(255, 217, 110, 0.13) 28%,
+    rgba(142, 217, 166, 0.16) 42%,
+    rgba(134, 199, 242, 0.17) 56%,
+    rgba(185, 164, 236, 0.17) 70%,
     transparent 100%
   );
   --gradient-card-wash: linear-gradient(
     150deg,
-    rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 55%
+    rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0) 55%
   );
   --gradient-primary: linear-gradient(135deg, var(--accent-4-soft), var(--accent-5-soft));
 
-  /* awning: pastel rainbow canvas, cream rail */
-  --awning-rail: linear-gradient(180deg, #fdfbf6, #eee5d3);
+  /* awning: pastel rainbow canvas, white rail */
+  --awning-rail: linear-gradient(180deg, #ffffff, #ebe9f3);
   --awning-ink: #ffffff;
-  --awning-ink-shadow: 0 1px 3px rgba(120, 82, 60, 0.5);
-  --awning-shadow: 0 9px 18px rgba(120, 82, 60, 0.22),
-    inset 0 3px 0 rgba(255, 255, 255, 0.55), inset 0 -3px 7px rgba(120, 82, 60, 0.16);
+  --awning-ink-shadow: 0 1px 3px rgba(74, 66, 104, 0.5);
+  --awning-shadow: 0 9px 18px rgba(74, 66, 104, 0.18),
+    inset 0 3px 0 rgba(255, 255, 255, 0.55), inset 0 -3px 7px rgba(74, 66, 104, 0.14);
 
-  /* shelves: warm cream-and-tan, the paper theme's own "furniture" — the
-     mochi-house shelves were brown wood, which fights this page color */
-  --shelf-frame: linear-gradient(180deg, #f2e9d6, #e9dcc2 60%, #dfcfb0);
-  --shelf-frame-border: rgba(120, 96, 56, 0.28);
+  /* shelves: cool pale lilac-grey. These were cream-and-tan to match the old
+     warm page; against a cool page that tan read as dirt. */
+  --shelf-frame: linear-gradient(180deg, #f4f2fb, #e9e6f4 60%, #ddd9ee);
+  --shelf-frame-border: rgba(74, 66, 104, 0.22);
   --shelf-frame-shadow: var(--shadow-md);
-  --shelf-back: linear-gradient(180deg, #d8c9a6, #e3d6b8 55%, #ece1c8);
-  --shelf-back-inset: inset 0 8px 16px rgba(120, 96, 56, 0.3),
-    inset 0 -3px 7px rgba(120, 96, 56, 0.16), inset 2px 0 6px rgba(120, 96, 56, 0.14),
-    inset -2px 0 6px rgba(120, 96, 56, 0.14);
-  --shelf-plank: linear-gradient(180deg, #fdfbf6 0 5px, #ddcba6 5px);
-  --shelf-plank-shadow: 0 7px 11px rgba(120, 96, 56, 0.3),
-    inset 0 1px 0 rgba(255, 250, 240, 0.75);
-  --shelf-ink: #6b5a3c;
+  --shelf-back: linear-gradient(180deg, #d8d3ea, #e4e0f1 55%, #efedf8);
+  --shelf-back-inset: inset 0 8px 16px rgba(74, 66, 104, 0.22),
+    inset 0 -3px 7px rgba(74, 66, 104, 0.12), inset 2px 0 6px rgba(74, 66, 104, 0.1),
+    inset -2px 0 6px rgba(74, 66, 104, 0.1);
+  --shelf-plank: linear-gradient(180deg, #ffffff 0 5px, #dbd6ee 5px);
+  --shelf-plank-shadow: 0 7px 11px rgba(74, 66, 104, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --shelf-ink: #5d5674;
+
+  /* gems */
+  --gem-edge: rgba(60, 54, 84, 0.38);
+  --gem-inclusion: rgba(60, 54, 84, 0.22);
 
   /* type: rounded geometric display, humanist body */
   --font-display: 'Quicksand', ui-rounded, system-ui, sans-serif;
@@ -115,6 +140,6 @@
   [data-theme='paper'] {
     --texture-page: none;
     --shadow-md: var(--shadow-sm);
-    --text-secondary: #57503f;
+    --text-secondary: #514c60;
   }
 }

@@ -28,6 +28,16 @@
   --accent-4-soft: #dbe6fd;
   --accent-5-soft: #d6d6d6;
   --accent-6-soft: #d0d0d0;
+  /* Mono's accents are already dark enough to read, so -ink barely moves. */
+  --accent-1-ink: #1f1f1f;
+  --accent-2-ink: #333333;
+  --accent-3-ink: #4a4a4a;
+  --accent-4-ink: #1d4ed8;
+  --accent-5-ink: #5c5c5c;
+  --accent-6-ink: #6b6b6b;
+
+  /* dark accents, so the tick goes white here */
+  --on-accent: #ffffff;
 
   --color-success: #15803d;
   --color-warn: #b45309;
@@ -63,6 +73,7 @@
   --gradient-rainbow: linear-gradient(90deg, #111111, #111111);
   --gradient-rainbow-smooth: linear-gradient(90deg, #111111, #111111);
   --gradient-rainbow-soft: linear-gradient(90deg, #d4d4d4, #d4d4d4);
+  --gradient-rainbow-ink: linear-gradient(90deg, #111111, #111111);
   --gradient-page-glow: none;
   --gradient-card-wash: none;
   --gradient-primary: none;
@@ -81,6 +92,11 @@
   --shelf-plank: linear-gradient(180deg, #d4d4d4, #d4d4d4);
   --shelf-plank-shadow: none;
   --shelf-ink: #444444;
+
+  /* Gem fills collapse toward ink with the rest of the accents; the facet
+     edges carry the whole drawing here, so they go full black. */
+  --gem-edge: #111111;
+  --gem-inclusion: #8c8c8c;
 
   --font-display: system-ui, sans-serif;
   --font-body: system-ui, sans-serif;

@@ -17,6 +17,9 @@ import ProjectDetail from './pages/ProjectDetail.jsx';
 import ShopStore from './pages/ShopStore.jsx';
 import ShopInventory from './pages/ShopInventory.jsx';
 import ShopLedger from './pages/ShopLedger.jsx';
+import Tumbler from './pages/Tumbler.jsx';
+import TumblerShelf from './pages/TumblerShelf.jsx';
+import TumblerCollection from './pages/TumblerCollection.jsx';
 import Settings from './pages/Settings.jsx';
 
 const DEFAULT_SETTINGS = { theme: 'paper', motion: true };
@@ -83,6 +86,9 @@ export default function App() {
             <Route path="/shop" element={<ShopStore />} />
             <Route path="/shop/inventory" element={<ShopInventory />} />
             <Route path="/shop/ledger" element={<ShopLedger />} />
+            <Route path="/tumbler" element={<Tumbler />} />
+            <Route path="/tumbler/shelf" element={<TumblerShelf />} />
+            <Route path="/tumbler/collection" element={<TumblerCollection />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Home />} />
           </Routes>

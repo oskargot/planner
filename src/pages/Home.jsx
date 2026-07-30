@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db.js';
@@ -9,7 +10,17 @@ import {
   SIZE_POINTS,
 } from '../db/actions.js';
 import { logicalDay, parseDay, monthLabel } from '../db/time.js';
-import { useBalance, useEarnedToday, habitDayStats, heatVar, staleness } from '../db/selectors.js';
+import {
+  useBalance,
+  useEarnedToday,
+  useGreetingState,
+  habitDayStats,
+  heatVar,
+  staleness,
+} from '../db/selectors.js';
+import { greeting, flavorLine } from '../greeting.js';
+import { barrelState, remainingMs, formatRemaining } from '../db/tumbler.js';
+import { useTumbler } from './Tumbler.jsx';
 import { floatPoints, confettiBurst } from '../fx.js';
 import { APP_NAME } from '../config.js';
 import Card from '../components/Card.jsx';
@@ -38,15 +49,44 @@ export default function Home() {
           </Link>
         </div>
       </header>
+      <Greeting />
       {/* Phone order (§ iPhone pass): habits, then tasks, then studio — one
           full-width card each, rather than two narrow columns. */}
       <div className="home-grid">
         <HabitsCard />
         <TasksCard />
         <StudioCard />
+        <TumblerCard />
         <InventoryCard />
       </div>
     </>
+  );
+}
+
+/*
+ * "Good morning, Oskar" plus one line about the state of things. The clock is
+ * held in state and ticked every minute, so the app doesn't sit open all
+ * evening still saying good afternoon — and so the tumbler line appears the
+ * moment a barrel finishes rather than on the next navigation.
+ */
+function Greeting() {
+  const state = useGreetingState();
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(t);
+  }, []);
+
+  const line = state ? flavorLine(state, now) : null;
+
+  return (
+    <div className="greeting">
+      <div className="greeting-hello">{greeting(now)}</div>
+      {/* Reserves its own line whether or not there's anything to say, so the
+          cards below don't jump when the flavor line appears or drops out. */}
+      <div className="greeting-line">{line}</div>
+    </div>
   );
 }
 
@@ -216,6 +256,47 @@ function StudioCard() {
             </button>
           </div>
         ))}
+      </div>
+    </Card>
+  );
+}
+
+/*
+ * The barrels at a glance. This is the card most likely to be the reason the
+ * app got opened at all, so it says what's happening in each barrel and
+ * nothing else — the actual game is one tap away.
+ */
+function TumblerCard() {
+  const { barrelCount, barrels } = useTumbler();
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  const bySlot = new Map(barrels.map((b) => [b.slot, b]));
+  const slots = Array.from({ length: barrelCount }, (_, i) => i);
+  const ready = slots.filter((s) => barrelState(bySlot.get(s), now) === 'ready').length;
+
+  return (
+    <Card title={ready > 0 ? `Rocks · ${ready} ready` : 'Rocks'} accent={6} to="/tumbler">
+      <div className="stack-sm">
+        {slots.map((slot) => {
+          const barrel = bySlot.get(slot);
+          const state = barrelState(barrel, now);
+          return (
+            <div className="row" key={slot}>
+              <Icon name="barrel" size={18} />
+              <span className="grow">
+                {state === 'ready' && 'Finished'}
+                {state === 'running' && formatRemaining(remainingMs(barrel, now))}
+                {state === 'idle' && <span className="muted">Empty</span>}
+              </span>
+              {state === 'ready' && <span className="badge success">open</span>}
+            </div>
+          );
+        })}
       </div>
     </Card>
   );

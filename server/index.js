@@ -38,6 +38,11 @@ const TABLES = {
   shop_items: ['id', 'name', 'cost', 'notes', 'image_url', 'sold_out', 'sort_order', 'created_at', 'updated_at', 'deleted'],
   purchases: ['id', 'shop_item_id', 'name_snapshot', 'cost_snapshot', 'purchased_at', 'redeemed_at', 'created_at', 'updated_at', 'deleted'],
   ledger: ['id', 'delta', 'reason', 'source_type', 'source_id', 'day', 'note', 'created_at', 'updated_at', 'deleted'],
+  // The tumbler's three. Same shape rules as everything else; they just never
+  // mix with the points tables above.
+  tumbler_barrels: ['id', 'slot', 'cycle_key', 'seed', 'species', 'grade', 'started_at', 'duration_ms', 'collected_at', 'created_at', 'updated_at', 'deleted'],
+  gems: ['id', 'seed', 'species', 'grade', 'cycle_key', 'created_at', 'updated_at', 'deleted'],
+  tumbler_ledger: ['id', 'delta', 'reason', 'upgrade_key', 'note', 'created_at', 'updated_at', 'deleted'],
 };
 
 // Only these meta keys sync; everything else in meta is device-local.

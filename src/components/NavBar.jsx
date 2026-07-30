@@ -99,5 +99,6 @@ function accentVars(n) {
   return {
     '--tab-accent': `var(--accent-${n})`,
     '--tab-accent-soft': `var(--accent-${n}-soft)`,
+    '--tab-accent-ink': `var(--accent-${n}-ink)`,
   };
 }

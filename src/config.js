@@ -1,6 +1,6 @@
 // App-wide constants. The name is undecided (§12) — change it here and in
 // index.html / vite.config.js manifest when it lands.
-export const APP_NAME = 'Binder';
+export const APP_NAME = 'Planner';
 
 // Nav is a declarative config (§6). Adding a page = adding an entry here
 // plus a route in App.jsx. Each section owns one of the six rainbow accents.
@@ -34,6 +34,17 @@ export const NAV = [
       { id: 'store', label: 'Store', path: '/shop' },
       { id: 'inventory', label: 'Inventory', path: '/shop/inventory' },
       { id: 'ledger', label: 'Ledger', path: '/shop/ledger' },
+    ],
+  },
+  // The tumbler runs on grit, not points — a separate economy on purpose, so
+  // there's a reason to open the app that isn't a task. It takes the sixth
+  // accent, which finally gives every hue in the palette a section of its own.
+  {
+    id: 'tumbler', label: 'Rocks', icon: 'gem', accent: 6,
+    children: [
+      { id: 'barrels', label: 'Barrels', path: '/tumbler' },
+      { id: 'shelf', label: 'Shelf', path: '/tumbler/shelf' },
+      { id: 'collection', label: 'Collection', path: '/tumbler/collection' },
     ],
   },
 ];

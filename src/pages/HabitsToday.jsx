@@ -7,10 +7,10 @@ import { floatPoints, confettiBurst } from '../fx.js';
 import Check from '../components/Check.jsx';
 import ColorPicker, { itemAccent } from '../components/ColorPicker.jsx';
 import Icon from '../components/Icon.jsx';
+import useLongPress from '../useLongPress.js';
 
 export default function HabitsToday() {
   const [day, setDay] = useState(logicalDay());
-  const [manage, setManage] = useState(false);
   const editable = isEditableDay(day);
   const today = logicalDay();
 
@@ -45,14 +45,13 @@ export default function HabitsToday() {
       <h1 className="page-title">
         <span className="accent-dot" style={{ background: 'var(--accent-3)' }} />
         Habits
-        <button
-          className="icon-btn"
-          style={{ marginLeft: 'auto' }}
-          onClick={() => setManage(!manage)}
-          aria-label="Manage habits"
-        >
-          {manage ? 'done' : <Icon name="pencil" size={18} />}
-        </button>
+        {/* The manage-mode toggle lived here. Editing is a hold on the row it
+            belongs to now, so there's no mode to be in and no button. */}
+        {habits.length > 0 && (
+          <span className="longpress-hint" style={{ marginLeft: 'auto' }}>
+            <Icon name="pencil" size={12} /> hold to edit
+          </span>
+        )}
       </h1>
 
       <div className="stepper">
@@ -74,43 +73,59 @@ export default function HabitsToday() {
         </div>
       )}
 
-      {habits.length === 0 && !manage && (
-        <p className="empty">
-          No habits yet. Tap <Icon name="pencil" size={14} /> to add your first.
-        </p>
-      )}
+      {habits.length === 0 && <p className="empty">No habits yet. Add your first below.</p>}
 
-      {habits.map((h, i) =>
-        manage ? (
-          <HabitEditor key={h.id} habit={h} index={i} />
-        ) : (
-          <div
-            className="list-item"
-            key={h.id}
-            style={{
-              padding: 'var(--space-4)',
-              borderLeft: `4px solid var(--accent-${itemAccent(h, i)})`,
-              background: doneIds.has(h.id)
-                ? `var(--accent-${itemAccent(h, i)}-soft)`
-                : undefined,
-            }}
-          >
-            <Check
-              on={doneIds.has(h.id)}
-              accent={itemAccent(h, i)}
-              round
-              disabled={!editable}
-              onClick={(e) => toggle(h, e)}
-              label={h.name}
-            />
-            <span style={{ fontSize: 'var(--size-xl)' }}>{h.emoji}</span>
-            <span className="item-title grow">{h.name}</span>
-          </div>
-        )
-      )}
+      {habits.map((h, i) => (
+        <HabitRow
+          key={h.id}
+          habit={h}
+          index={i}
+          done={doneIds.has(h.id)}
+          editable={editable}
+          onToggle={toggle}
+        />
+      ))}
 
-      {manage && <AddHabit />}
+      {/* Always on screen now. The add form used to be gated behind manage
+          mode, and with the mode gone it has to live somewhere — a single
+          input row at the bottom is quieter than a toggle in the title. */}
+      <AddHabit />
     </>
+  );
+}
+
+function HabitRow({ habit, index, done, editable, onToggle }) {
+  const [editing, setEditing] = useState(false);
+  const { handlers, holding } = useLongPress(() => setEditing(true));
+  const accent = itemAccent(habit, index);
+
+  if (editing) return <HabitEditor habit={habit} index={index} close={() => setEditing(false)} />;
+
+  return (
+    <div
+      className={`list-item longpress${holding ? ' holding' : ''}`}
+      style={{
+        padding: 'var(--space-4)',
+        borderLeft: `4px solid var(--accent-${accent})`,
+        background: done ? `var(--accent-${accent}-soft)` : undefined,
+      }}
+      {...handlers}
+    >
+      {/* Checking is the row's primary action — holding the box shouldn't
+          turn into an edit. */}
+      <span onPointerDown={(e) => e.stopPropagation()} style={{ display: 'inline-flex' }}>
+        <Check
+          on={done}
+          accent={accent}
+          round
+          disabled={!editable}
+          onClick={(e) => onToggle(habit, e)}
+          label={habit.name}
+        />
+      </span>
+      <span style={{ fontSize: 'var(--size-xl)' }}>{habit.emoji}</span>
+      <span className="item-title grow">{habit.name}</span>
+    </div>
   );
 }
 
@@ -147,7 +162,7 @@ function AddHabit() {
   );
 }
 
-function HabitEditor({ habit, index }) {
+function HabitEditor({ habit, index, close }) {
   const [name, setName] = useState(habit.name);
   const [emoji, setEmoji] = useState(habit.emoji || '');
 
@@ -188,7 +203,11 @@ function HabitEditor({ habit, index }) {
           }
         }}
       >
-        <Icon name="close" size={16} />
+        <Icon name="trash" size={16} />
+      </button>
+      {/* The name and emoji inputs save on blur, so this only dismisses. */}
+      <button className="btn primary" onClick={close}>
+        Done
       </button>
     </div>
   );
