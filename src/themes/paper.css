@@ -61,6 +61,49 @@
   --texture-page: radial-gradient(rgba(90, 76, 50, 0.045) 1px, transparent 1px);
   --texture-card: none;
 
+  /* Rainbow decoration. The bloom and the card wash are deliberately weak —
+     they should register as "warm and colorful", not as a tint you have to
+     read text through. */
+  /* Tilted just off vertical so the six hues band diagonally, and ending on a
+     transparent stop so the bloom dissolves instead of stopping at a visible
+     line where the background band ends. */
+  --gradient-page-glow: linear-gradient(
+    165deg,
+    rgba(232, 130, 124, 0.2) 0%,
+    rgba(233, 160, 92, 0.17) 14%,
+    rgba(217, 184, 63, 0.15) 28%,
+    rgba(124, 180, 122, 0.15) 42%,
+    rgba(111, 163, 207, 0.16) 56%,
+    rgba(169, 139, 200, 0.16) 70%,
+    transparent 100%
+  );
+  --gradient-card-wash: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 55%
+  );
+  --gradient-primary: linear-gradient(135deg, var(--accent-4-soft), var(--accent-5-soft));
+
+  /* awning: pastel rainbow canvas, cream rail */
+  --awning-rail: linear-gradient(180deg, #fdfbf6, #eee5d3);
+  --awning-ink: #ffffff;
+  --awning-ink-shadow: 0 1px 3px rgba(120, 82, 60, 0.5);
+  --awning-shadow: 0 9px 18px rgba(120, 82, 60, 0.22),
+    inset 0 3px 0 rgba(255, 255, 255, 0.55), inset 0 -3px 7px rgba(120, 82, 60, 0.16);
+
+  /* shelves: warm cream-and-tan, the paper theme's own "furniture" — the
+     mochi-house shelves were brown wood, which fights this page color */
+  --shelf-frame: linear-gradient(180deg, #f2e9d6, #e9dcc2 60%, #dfcfb0);
+  --shelf-frame-border: rgba(120, 96, 56, 0.28);
+  --shelf-frame-shadow: var(--shadow-md);
+  --shelf-back: linear-gradient(180deg, #d8c9a6, #e3d6b8 55%, #ece1c8);
+  --shelf-back-inset: inset 0 8px 16px rgba(120, 96, 56, 0.3),
+    inset 0 -3px 7px rgba(120, 96, 56, 0.16), inset 2px 0 6px rgba(120, 96, 56, 0.14),
+    inset -2px 0 6px rgba(120, 96, 56, 0.14);
+  --shelf-plank: linear-gradient(180deg, #fdfbf6 0 5px, #ddcba6 5px);
+  --shelf-plank-shadow: 0 7px 11px rgba(120, 96, 56, 0.3),
+    inset 0 1px 0 rgba(255, 250, 240, 0.75);
+  --shelf-ink: #6b5a3c;
+
   /* type: rounded geometric display, humanist body */
   --font-display: 'Quicksand', ui-rounded, system-ui, sans-serif;
   --font-body: 'Nunito Sans', system-ui, sans-serif;

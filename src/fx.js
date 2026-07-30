@@ -26,6 +26,34 @@ export function floatPoints(target, delta) {
   setTimeout(() => el.remove(), 1000);
 }
 
+// A rainbow ring that blooms out of wherever you touched. Global and
+// document-level on purpose: it belongs to the whole app, not to any one
+// control, and it must never depend on a component remembering to wire it up.
+let ripplesLive = false;
+
+export function initTapRipples() {
+  if (ripplesLive) return;
+  ripplesLive = true;
+  document.addEventListener(
+    'pointerdown',
+    (e) => {
+      // Right/middle click isn't a tap. Everything else — finger, pen,
+      // left click — gets a ring.
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (motionOff()) return;
+      const el = document.createElement('div');
+      el.className = 'tap-ripple';
+      el.style.left = `${e.clientX}px`;
+      el.style.top = `${e.clientY}px`;
+      document.body.appendChild(el);
+      // Outlive the animation by a hair, then clean up. Nothing here holds a
+      // reference, so a torn-down page just drops them.
+      setTimeout(() => el.remove(), 700);
+    },
+    { passive: true }
+  );
+}
+
 const ACCENTS = [1, 2, 3, 4, 5, 6];
 
 export function confettiBurst(target, count = 24) {

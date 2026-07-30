@@ -18,10 +18,20 @@ body {
   line-height: var(--leading-normal);
   color: var(--text-primary);
   background-color: var(--bg-page);
-  background-image: var(--texture-page);
-  background-size: 14px 14px;
+  /* rainbow bloom across the top, then the paper tooth over the whole page */
+  background-image: var(--gradient-page-glow), var(--texture-page);
+  background-size: 100% 420px, 14px 14px;
+  background-repeat: no-repeat, repeat;
+  background-position: top center, top left;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
+}
+
+/* Icons are inline SVG (components/Icon.jsx). They inherit color, never
+   shrink in a flex row, and sit on the text baseline when used mid-sentence. */
+.icon {
+  flex-shrink: 0;
+  vertical-align: -0.18em;
 }
 
 button {
@@ -120,6 +130,18 @@ h1, h2, h3 {
 .nav-bottom {
   border-top: var(--border-hairline);
   padding-bottom: env(safe-area-inset-bottom);
+  position: relative;
+}
+
+/* a rainbow hairline riding the top edge of the phone tab bar */
+.nav-bottom::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  height: 2px;
+  background-image: var(--gradient-rainbow);
 }
 
 .nav-rail { display: none; }
@@ -160,7 +182,7 @@ h1, h2, h3 {
   color: var(--text-muted);
 }
 
-.rail-tab .nav-icon { font-size: var(--size-xl); line-height: 1.2; }
+.nav-icon { display: inline-flex; align-items: center; justify-content: center; }
 
 .rail-tab.active {
   color: var(--text-primary);
@@ -208,12 +230,16 @@ h1, h2, h3 {
   transition: color var(--dur-fast) var(--ease-standard);
 }
 
-.nav-tab .nav-icon { font-size: var(--size-lg); line-height: 1; }
-
 .nav-tab.active {
   color: var(--text-primary);
   border-top-color: var(--tab-accent, var(--accent-1));
   background: linear-gradient(to bottom, var(--tab-accent-soft, transparent), transparent);
+}
+
+/* the active section's glyph takes its own accent; the label stays ink */
+.nav-tab.active .nav-icon,
+.rail-tab.active .nav-icon {
+  color: var(--tab-accent, var(--accent-1));
 }
 
 .nav-subtab {
@@ -237,13 +263,26 @@ h1, h2, h3 {
 
 .card {
   background-color: var(--bg-surface);
-  background-image: var(--texture-card);
+  background-image: var(--gradient-card-wash), var(--texture-card);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   border: var(--border-hairline);
   padding: var(--space-4);
   margin-bottom: var(--space-4);
   position: relative;
+}
+
+/* A rainbow tab hanging off the top edge. Inset from the corners so it never
+   has to be clipped to the card's radius (and so it reads as a bookmark). */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--space-5);
+  right: var(--space-5);
+  height: 3px;
+  border-radius: 0 0 var(--radius-full) var(--radius-full);
+  background-image: var(--gradient-rainbow);
 }
 
 .card-header {
@@ -253,9 +292,12 @@ h1, h2, h3 {
   gap: var(--space-2);
   margin-bottom: var(--space-3);
   padding-bottom: var(--space-2);
+  /* the rule under the header fades out of the section's own accent */
+  background-image: var(--header-rule, none);
+  background-repeat: no-repeat;
+  background-position: bottom left;
+  background-size: 100% 2px;
 }
-
-.card-link { white-space: nowrap; }
 
 .card-title {
   font-family: var(--font-display);
@@ -266,10 +308,22 @@ h1, h2, h3 {
   gap: var(--space-2);
 }
 
+.card-title .accent-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
 .card-link {
+  white-space: nowrap;
   font-size: var(--size-sm);
   color: var(--text-muted);
   font-weight: var(--weight-medium);
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
 }
 
 .card-sticker {
@@ -287,25 +341,36 @@ h1, h2, h3 {
   50% { transform: rotate(4deg) translateY(-3px); }
 }
 
-/* Phone: habits + tasks share the top row, wide cards span both.
-   Tablet and up: three across. */
+/* Phone: one card per row, in reading order — habits, tasks, studio. Two
+   narrow columns squeezed both the calendar and the task titles, so the phone
+   layout stopped being a grid at all. Tablet and up: three across. */
 .home-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: var(--space-3);
 }
 .home-grid .card { margin-bottom: 0; }
-.home-grid .card.wide { grid-column: 1 / -1; }
 @media (min-width: 700px) {
   .home-grid { grid-template-columns: 1fr 1fr 1fr; gap: var(--space-4); }
-  .home-grid .card.wide { grid-column: auto; }
+}
+
+/* Reclaim the horizontal room the habits split needs on a small phone. */
+@media (max-width: 430px) {
+  .home-grid .card { padding: var(--space-3); }
+  .home-grid .card::before { left: var(--space-4); right: var(--space-4); }
 }
 
 .home-header { margin-bottom: var(--space-4); }
 
-.home-header .settings-btn {
+.home-header .wordmark {
   font-size: var(--size-2xl);
-  line-height: 1;
+  background-image: var(--gradient-rainbow-smooth);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.home-header .settings-btn {
   padding: var(--space-2);
   min-width: 44px;
   min-height: 44px;
@@ -327,6 +392,54 @@ h1, h2, h3 {
   font-weight: var(--weight-bold);
   font-size: var(--size-xl);
   color: var(--color-points);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* the ✦-and-number pairing, wherever a balance or cost is shown */
+.points-tally {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  color: var(--color-points);
+}
+
+/* ---------- home: habits card split (calendar left, list right) ---------- */
+
+.habits-split {
+  display: grid;
+  grid-template-columns: minmax(0, 156px) minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+
+/* In the three-across grid above 700px the card is far too narrow to split,
+   so the list drops back under the calendar. */
+@media (min-width: 700px) {
+  .habits-split { grid-template-columns: minmax(0, 1fr); }
+}
+
+.habit-minis { min-width: 0; }
+.habit-minis > * + * { margin-top: var(--space-2); }
+
+.habit-mini {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.habit-mini .check { width: 23px; height: 23px; }
+.habit-mini-emoji { flex-shrink: 0; font-size: var(--size-sm); }
+
+.habit-mini-name {
+  min-width: 0;
+  font-size: var(--size-sm);
+  line-height: var(--leading-tight);
+  overflow-wrap: anywhere;
 }
 
 /* ---------- generic bits ---------- */
@@ -368,7 +481,10 @@ h1, h2, h3 {
 }
 
 .btn:active { transform: scale(0.96); }
-.btn.primary { background: var(--accent-4-soft); }
+.btn.primary {
+  background-color: var(--accent-4-soft);
+  background-image: var(--gradient-primary);
+}
 .btn.danger { color: var(--color-danger); }
 .btn.ghost { background: none; border-color: transparent; }
 .btn:disabled { opacity: 0.45; cursor: default; }
@@ -378,6 +494,9 @@ h1, h2, h3 {
   border-radius: var(--radius-sm);
   color: var(--text-muted);
   font-size: var(--size-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .icon-btn:active { color: var(--text-primary); }
 
@@ -386,6 +505,12 @@ h1, h2, h3 {
   font-size: var(--size-sm);
   text-align: center;
   padding: var(--space-5) var(--space-3);
+}
+
+.ledger-reason {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-secondary);
 }
 
 .badge {
@@ -503,6 +628,31 @@ h1, h2, h3 {
   }
 }
 
+/* ---------- tap ripple ----------
+ * A rainbow ring blooming out of wherever you touched (fx.js installs one
+ * document-level listener). Masked to a ring rather than a filled disc so it
+ * never washes out what you just tapped.
+ */
+
+.tap-ripple {
+  position: fixed;
+  z-index: 58;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border-radius: var(--radius-full);
+  pointer-events: none;
+  background-image: var(--gradient-ripple);
+  -webkit-mask: radial-gradient(closest-side, transparent 56%, #000 62%);
+  mask: radial-gradient(closest-side, transparent 56%, #000 62%);
+  animation: tap-ripple 520ms var(--ease-standard) forwards;
+}
+
+@keyframes tap-ripple {
+  from { transform: scale(0.45); opacity: 0.85; }
+  to { transform: scale(3.4); opacity: 0; }
+}
+
 /* ---------- heat map ---------- */
 
 .heat-grid {
@@ -521,6 +671,13 @@ h1, h2, h3 {
   font-size: var(--size-xs);
   color: var(--text-secondary);
   border: none;
+}
+
+.heat-weekday {
+  text-align: center;
+  font-size: var(--size-xs);
+  color: var(--text-muted);
+  line-height: 1.4;
 }
 
 .heat-cell.outside { visibility: hidden; }
@@ -551,60 +708,321 @@ h1, h2, h3 {
   transition: width var(--dur-slow) var(--ease-standard);
 }
 
-/* ---------- shop grid ---------- */
+/* ---------- the shopfront: awning + shelf cabinet ----------
+ * Ported from mochi house, recolored into this theme's tokens. All of it is
+ * decoration: the page title names the screen, and every item still carries
+ * its name, cost and state as text. A theme that flattens the awning stripes
+ * and the shelf insets (see mono) loses nothing but the charm.
+ */
 
-.shop-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: var(--space-3);
-}
-
-.shop-item {
-  background: var(--bg-surface);
-  border-radius: var(--radius-lg);
-  border: var(--border-hairline);
-  box-shadow: var(--shadow-sm);
-  padding: var(--space-3);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  text-align: center;
-}
-
-.shop-item img {
-  max-width: 100%;
-  height: 90px;
-  object-fit: contain;
-  border-radius: var(--radius-md);
-}
-
-.shop-item .placeholder {
-  height: 90px;
+.awning {
+  position: relative;
+  margin: var(--space-4) 0 0;
+  height: 46px;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--size-2xl);
-  background: var(--bg-surface-alt);
-  border-radius: var(--radius-md);
+  background-image: var(--awning-stripe);
+  background-size: var(--awning-stripe-size);
+  background-repeat: repeat-x;
+  box-shadow: var(--awning-shadow);
 }
 
-.shop-item.unaffordable { opacity: 0.6; }
-.shop-item.soldout { opacity: 0.45; filter: grayscale(1); }
+/* the rail the canvas hangs from */
+.awning::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  top: -6px;
+  height: 9px;
+  border-radius: var(--radius-sm);
+  background-image: var(--awning-rail);
+  box-shadow: var(--shadow-sm);
+}
+
+/* the scalloped valance. Its 28px mask period matches one stripe band, so the
+   scallops land one-per-color. */
+.awning::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -14px;
+  height: 15px;
+  background-image: var(--awning-stripe);
+  background-size: var(--awning-stripe-size);
+  background-repeat: repeat-x;
+  -webkit-mask: radial-gradient(circle 13px at 14px 0, #000 12px, transparent 12.5px) 0 0 / 28px 15px
+    repeat-x;
+  mask: radial-gradient(circle 13px at 14px 0, #000 12px, transparent 12.5px) 0 0 / 28px 15px
+    repeat-x;
+}
+
+.awning-title {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--size-lg);
+  color: var(--awning-ink);
+  text-shadow: var(--awning-ink-shadow);
+}
+
+.cabinet {
+  /* clears the valance hanging 14px below the awning */
+  margin: var(--space-5) 0 var(--space-4);
+  padding: var(--space-4) var(--space-3) var(--space-1);
+  border-radius: var(--radius-lg);
+  position: relative;
+  overflow: hidden;
+  /* Pins the cabinet to its own layer. Without it iOS Safari re-rasterizes
+     the inset shadows on every frame of a nearby animation and the shelf
+     edges flicker — this exact bug bit mochi house. */
+  transform: translateZ(0);
+  background-image: var(--shelf-frame);
+  border: 1px solid var(--shelf-frame-border);
+  box-shadow: var(--shelf-frame-shadow);
+}
+
+.shelf { position: relative; margin-bottom: var(--space-4); }
+.shelf:last-child { margin-bottom: var(--space-2); }
+
+/* the recess the boxes sit inside, so each row reads as a real compartment */
+.shelf::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 4px;
+  bottom: 6px;
+  z-index: 0;
+  border-radius: var(--radius-md);
+  background-image: var(--shelf-back);
+  box-shadow: var(--shelf-back-inset);
+}
+
+.shelf-items {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(var(--per-shelf, 2), minmax(0, 1fr));
+  gap: var(--space-2);
+  align-items: end;
+  padding: var(--space-3) var(--space-2) 0;
+}
+
+.plank {
+  position: relative;
+  z-index: 1;
+  height: 12px;
+  border-radius: 3px 3px 5px 5px;
+  background-image: var(--shelf-plank);
+  box-shadow: var(--shelf-plank-shadow);
+}
+
+.shelf-empty {
+  color: var(--shelf-ink);
+  font-size: var(--size-sm);
+  text-align: center;
+  padding: var(--space-5) var(--space-3);
+}
+
+/* ---------- a box on the shelf ---------- */
+
+.box {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.box-art {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-surface);
+  border: 3px solid var(--box-accent, var(--accent-5));
+  box-shadow: var(--shadow-md);
+}
+
+.box-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.box-gen {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background-image: linear-gradient(150deg, var(--box-accent-soft), var(--bg-surface) 72%);
+  color: var(--box-accent);
+}
+
+.box-name {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  z-index: 3;
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  padding: 3px 4px;
+  font-family: var(--font-display);
+  font-weight: var(--weight-medium);
+  font-size: var(--size-2xs);
+  line-height: var(--leading-tight);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  overflow-wrap: anywhere;
+}
+
+/* The clamp lives on an inner span, not on .box-name itself: absolute
+   positioning blockifies the element, which turns `display: -webkit-box` into
+   a plain block and silently drops the line clamp — you get a third line
+   sliced through the middle instead of an ellipsis. */
+.box-name span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.2;
+}
+
+/* Price tag with a punched hole. Soft accent fill rather than the saturated
+   one: white-on-pastel is unreadable at this size, especially on the yellow. */
+.price-tag {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 2px 5px 2px 10px;
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--size-2xs);
+  color: var(--text-primary);
+  background: var(--box-accent-soft, var(--accent-5-soft));
+  border: 1.5px solid var(--box-accent, var(--accent-5));
+  border-radius: var(--radius-sm) var(--radius-md) var(--radius-md) var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--dur-fast) var(--ease-bounce);
+}
+
+.price-tag::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-full);
+  background: var(--bg-surface);
+}
+
+.price-tag:active { transform: scale(0.93); }
+
+.price-tag.cant {
+  background: var(--bg-sunken);
+  border-color: var(--border-color);
+  color: var(--text-muted);
+}
+
+/* A rubber stamp across the middle of the art. It used to live in the top-left
+   corner, where it collided with the price tag once the boxes got narrow. */
+.box-sticker {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  z-index: 5;
+  transform: translate(-50%, -50%) rotate(-8deg);
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--size-2xs);
+  white-space: nowrap;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  border: 1.5px solid var(--text-primary);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Fixed height so every box on a shelf is the same height — the boxes are
+   bottom-aligned to the plank, so a two-line note would otherwise shove one
+   box's art up and stair-step the whole row. */
+.box-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  height: 24px;
+}
+
+.box-note {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--size-2xs);
+  line-height: var(--leading-tight);
+  color: var(--shelf-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.box-edit {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  box-shadow: var(--shadow-sm);
+}
+.box-edit:active { color: var(--text-primary); }
+
+.box.unaffordable .box-art { opacity: 0.72; }
+.box.soldout .box-art { opacity: 0.6; filter: grayscale(0.85); }
 
 /* ---------- mini month calendar (Home habits card) ---------- */
 
 .mini-month {
   display: block;
-  margin-bottom: var(--space-3);
+  min-width: 0;
 }
 
 .mini-month .heat-grid {
-  gap: 3px;
+  gap: 2px;
 }
 
+/* At ~150px wide the cells are around 19px, so the day numbers need their
+   own step below --size-xs to stay inside them. */
 .mini-month .heat-cell {
-  font-size: var(--size-xs);
+  font-size: var(--size-2xs);
   border-radius: var(--radius-sm);
+}
+
+.mini-month .heat-weekday {
+  font-size: var(--size-2xs);
+}
+
+/* Stacked under the calendar (wide grid) it needs its old bottom gap back. */
+@media (min-width: 700px) {
+  .mini-month { margin-bottom: var(--space-3); }
 }
 
 .mini-month .month-label {
@@ -649,11 +1067,18 @@ h1, h2, h3 {
   border-radius: var(--radius-full);
   background: var(--bg-surface);
   border: var(--border-hairline);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
 }
 .stepper button:disabled { opacity: 0.3; }
 
 .locked-note {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
   font-size: var(--size-sm);
   color: var(--text-muted);
   background: var(--bg-sunken);

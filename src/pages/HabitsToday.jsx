@@ -6,6 +6,7 @@ import { logicalDay, addDays, isEditableDay, prettyDay } from '../db/time.js';
 import { floatPoints, confettiBurst } from '../fx.js';
 import Check from '../components/Check.jsx';
 import ColorPicker, { itemAccent } from '../components/ColorPicker.jsx';
+import Icon from '../components/Icon.jsx';
 
 export default function HabitsToday() {
   const [day, setDay] = useState(logicalDay());
@@ -50,25 +51,33 @@ export default function HabitsToday() {
           onClick={() => setManage(!manage)}
           aria-label="Manage habits"
         >
-          {manage ? 'done' : '✎'}
+          {manage ? 'done' : <Icon name="pencil" size={18} />}
         </button>
       </h1>
 
       <div className="stepper">
-        <button onClick={() => setDay(addDays(day, -1))} aria-label="Previous day">‹</button>
+        <button onClick={() => setDay(addDays(day, -1))} aria-label="Previous day">
+          <Icon name="chevronLeft" size={18} />
+        </button>
         <div className="day-label">
           {prettyDay(day)}
           <div className="muted">{day}</div>
         </div>
         <button onClick={() => setDay(addDays(day, 1))} disabled={day >= today} aria-label="Next day">
-          ›
+          <Icon name="chevronRight" size={18} />
         </button>
       </div>
 
-      {!editable && <div className="locked-note">🔒 Outside the backfill window — read only</div>}
+      {!editable && (
+        <div className="locked-note">
+          <Icon name="lock" size={15} /> Outside the backfill window — read only
+        </div>
+      )}
 
       {habits.length === 0 && !manage && (
-        <p className="empty">No habits yet. Tap ✎ to add your first.</p>
+        <p className="empty">
+          No habits yet. Tap <Icon name="pencil" size={14} /> to add your first.
+        </p>
       )}
 
       {habits.map((h, i) =>
@@ -179,7 +188,7 @@ function HabitEditor({ habit, index }) {
           }
         }}
       >
-        ✕
+        <Icon name="close" size={16} />
       </button>
     </div>
   );

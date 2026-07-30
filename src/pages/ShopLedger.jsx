@@ -5,8 +5,16 @@ import { db } from '../db/db.js';
 import { adjustPoints } from '../db/actions.js';
 import { useBalance } from '../db/selectors.js';
 import { exportJSON, importJSON } from '../db/backup.js';
+import Icon from '../components/Icon.jsx';
 
-const REASON_ICON = { task: '📝', habit: '🔁', project: '🎨', purchase: '🎁', adjust: '🛠️' };
+// Ledger rows name their source with the same glyph the nav uses for it.
+const REASON_ICON = {
+  task: 'tasks',
+  habit: 'habits',
+  project: 'studio',
+  purchase: 'shop',
+  adjust: 'sliders',
+};
 
 export default function ShopLedger() {
   const balance = useBalance();
@@ -33,8 +41,8 @@ export default function ShopLedger() {
       <h1 className="page-title">
         <span className="accent-dot" style={{ background: 'var(--accent-5)' }} />
         Ledger
-        <span className="display bold" style={{ marginLeft: 'auto', color: 'var(--color-points)' }}>
-          ✦ {balance ?? '…'}
+        <span className="points-tally" style={{ marginLeft: 'auto' }}>
+          <Icon name="spark" size={17} /> {balance ?? '…'}
         </span>
       </h1>
 
@@ -56,7 +64,9 @@ export default function ShopLedger() {
       {withRunning.length === 0 && <p className="empty">No history yet. Go earn something.</p>}
       {withRunning.map((r) => (
         <div className="list-item" key={r.id} style={{ padding: 'var(--space-2) var(--space-3)' }}>
-          <span>{REASON_ICON[r.reason] || '·'}</span>
+          <span className="ledger-reason" title={r.reason}>
+            <Icon name={REASON_ICON[r.reason] || 'spark'} size={17} />
+          </span>
           <div className="grow">
             <span className="small">{r.note || r.reason}</span>
             <div className="muted">{r.day}</div>

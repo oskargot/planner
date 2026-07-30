@@ -1,58 +1,105 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db.js';
 import { addShopItem, updateShopItem, deleteShopItem, purchaseItem } from '../db/actions.js';
 import { useBalance } from '../db/selectors.js';
 import { confettiBurst } from '../fx.js';
+import Icon from '../components/Icon.jsx';
+import { itemAccent } from '../components/ColorPicker.jsx';
+
+// How many boxes fit on one shelf. This has to be a real number rather than a
+// CSS auto-fill, because each shelf renders its own plank underneath — the
+// planks have to line up with actual rows. Three across on a phone: two made
+// the boxes so tall that one shelf filled the screen.
+function usePerShelf() {
+  const [n, setN] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(min-width: 700px)').matches ? 4 : 3
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 700px)');
+    const update = () => setN(mq.matches ? 4 : 3);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  return n;
+}
+
+function chunk(items, size) {
+  const out = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
 
 export default function ShopStore() {
   const balance = useBalance();
   const [editing, setEditing] = useState(null); // null | 'new' | item
+  const perShelf = usePerShelf();
   const items = useLiveQuery(
     () => db.shop_items.filter((i) => !i.deleted).sortBy('sort_order'),
     [],
     []
   );
 
+  const shelves = chunk(items, perShelf);
+
   return (
     <>
       <h1 className="page-title">
         <span className="accent-dot" style={{ background: 'var(--accent-5)' }} />
         Store
-        <span
-          className="display bold"
-          style={{ marginLeft: 'auto', color: 'var(--color-points)' }}
-        >
-          ✦ {balance ?? '…'}
+        <span className="points-tally" style={{ marginLeft: 'auto' }}>
+          <Icon name="spark" size={17} /> {balance ?? '…'}
         </span>
       </h1>
+
+      {/* The shopfront. Purely decorative — the page title above already says
+          where you are, so a theme that flattens the stripes loses nothing. */}
+      <div className="awning">
+        <span className="awning-title">
+          <Icon name="shop" size={18} /> open
+        </span>
+      </div>
 
       {editing && (
         <ItemForm item={editing === 'new' ? null : editing} close={() => setEditing(null)} />
       )}
 
-      <div className="shop-grid">
-        {items.map((item) => (
-          <ShopItem key={item.id} item={item} balance={balance ?? 0} onEdit={() => setEditing(item)} />
+      <div className="cabinet">
+        {items.length === 0 && (
+          <p className="shelf-empty">The shelves are empty. Add something worth wanting.</p>
+        )}
+        {shelves.map((row, i) => (
+          <div className="shelf" key={i}>
+            <div className="shelf-items" style={{ '--per-shelf': perShelf }}>
+              {row.map((item, j) => (
+                <ShopItem
+                  key={item.id}
+                  item={item}
+                  accent={itemAccent(item, i * perShelf + j)}
+                  balance={balance ?? 0}
+                  onEdit={() => setEditing(item)}
+                />
+              ))}
+            </div>
+            <div className="plank" />
+          </div>
         ))}
       </div>
 
-      {items.length === 0 && (
-        <p className="empty">The shelves are empty. Add something worth wanting.</p>
-      )}
-
       {!editing && (
         <button className="btn" style={{ marginTop: 'var(--space-4)' }} onClick={() => setEditing('new')}>
-          + Add item
+          <Icon name="plus" size={16} /> Add item
         </button>
       )}
     </>
   );
 }
 
-function ShopItem({ item, balance, onEdit }) {
+function ShopItem({ item, accent, balance, onEdit }) {
+  const soldOut = !!item.sold_out;
   const affordable = balance >= item.cost;
-  const cls = item.sold_out ? 'soldout' : affordable ? '' : 'unaffordable';
+  const cls = soldOut ? ' soldout' : affordable ? '' : ' unaffordable';
 
   async function buy(e) {
     const btn = e.currentTarget;
@@ -64,28 +111,52 @@ function ShopItem({ item, balance, onEdit }) {
     }
   }
 
+  const price = (
+    <>
+      <Icon name="spark" size={13} />
+      {item.cost}
+    </>
+  );
+
   return (
-    <div className={`shop-item ${cls}`}>
-      {item.image_url ? (
-        <img src={item.image_url} alt="" loading="lazy" />
-      ) : (
-        <div className="placeholder">🎁</div>
-      )}
-      <div className="bold display">{item.name}</div>
-      {item.notes && <div className="muted">{item.notes}</div>}
-      <div className="display" style={{ color: 'var(--color-points)' }}>✦ {item.cost}</div>
-      {item.sold_out ? (
-        <span className="badge">sold out</span>
-      ) : affordable ? (
-        <button className="btn primary" onClick={buy}>
-          Buy
+    <div className={`box${cls}`} style={{ '--box-accent': `var(--accent-${accent})`, '--box-accent-soft': `var(--accent-${accent}-soft)` }}>
+      <div className="box-art">
+        {item.image_url ? (
+          <img src={item.image_url} alt="" loading="lazy" />
+        ) : (
+          <div className="box-gen">
+            <Icon name="shop" size={34} />
+          </div>
+        )}
+
+        {soldOut && <span className="box-sticker out">sold out</span>}
+
+        {soldOut || !affordable ? (
+          <span className="price-tag cant">{price}</span>
+        ) : (
+          <button className="price-tag" onClick={buy} aria-label={`Buy ${item.name} for ${item.cost} points`}>
+            {price}
+          </button>
+        )}
+
+        {/* The span is what gets line-clamped — see the note in base.css. */}
+        <div className="box-name">
+          <span>{item.name}</span>
+        </div>
+      </div>
+
+      {/* Pencil first, so each foot visibly belongs to the box above it rather
+          than reading as a divider between two of them. */}
+      <div className="box-foot">
+        <button className="box-edit" onClick={onEdit} aria-label={`Edit ${item.name}`}>
+          <Icon name="pencil" size={12} />
         </button>
-      ) : (
-        <span className="badge warn">{item.cost - balance} more</span>
-      )}
-      <button className="icon-btn" onClick={onEdit}>
-        edit
-      </button>
+        {/* One line only, and the shortfall outranks the note — the full note
+            is a tap away in the edit sheet. */}
+        <div className="box-note" title={item.notes || undefined}>
+          {!soldOut && !affordable ? `${item.cost - balance} more` : item.notes}
+        </div>
+      </div>
     </div>
   );
 }

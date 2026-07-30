@@ -16,6 +16,7 @@ import { logicalDay, addDays } from '../db/time.js';
 import { floatPoints, confettiBurst } from '../fx.js';
 import Check from '../components/Check.jsx';
 import ColorPicker from '../components/ColorPicker.jsx';
+import Icon from '../components/Icon.jsx';
 import { StaleBadge } from './Studio.jsx';
 import { staleness } from '../db/selectors.js';
 
@@ -81,7 +82,13 @@ export default function ProjectDetail() {
       </div>
 
       <button className={`btn${touchedToday ? '' : ' primary'}`} onClick={toggleTouch}>
-        {touchedToday ? '✓ Worked on it today' : 'Worked on it today?'}
+        {touchedToday ? (
+          <>
+            <Icon name="check" size={15} strokeWidth={2.4} /> Worked on it today
+          </>
+        ) : (
+          'Worked on it today?'
+        )}
       </button>
 
       <div className="row" style={{ margin: 'var(--space-4) 0', gap: 3 }}>
@@ -122,7 +129,7 @@ export default function ProjectDetail() {
               Pause
             </button>
             <button className="btn" onClick={markDone}>
-              🎉 Mark done
+              <Icon name="trophy" size={16} /> Mark done
             </button>
           </>
         ) : (
@@ -174,9 +181,15 @@ function MilestoneRow({ m, prev, next, accent }) {
     <div className={`list-item${m.done_at ? ' done' : ''}`}>
       <Check on={!!m.done_at} accent={accent} onClick={() => toggleMilestone(m)} label={m.title} />
       <span className="item-title grow">{m.title}</span>
-      <button className="icon-btn" onClick={() => move(true)} disabled={!prev} aria-label="Move up">↑</button>
-      <button className="icon-btn" onClick={() => move(false)} disabled={!next} aria-label="Move down">↓</button>
-      <button className="icon-btn" onClick={() => deleteMilestone(m.id)} aria-label="Delete milestone">✕</button>
+      <button className="icon-btn" onClick={() => move(true)} disabled={!prev} aria-label="Move up">
+        <Icon name="arrowUp" size={16} />
+      </button>
+      <button className="icon-btn" onClick={() => move(false)} disabled={!next} aria-label="Move down">
+        <Icon name="arrowDown" size={16} />
+      </button>
+      <button className="icon-btn" onClick={() => deleteMilestone(m.id)} aria-label="Delete milestone">
+        <Icon name="close" size={16} />
+      </button>
     </div>
   );
 }
