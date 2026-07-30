@@ -67,13 +67,14 @@ troubleshooting in `deploy/README.md`.
 
 `main` is what Oskar pulls on jellybot, and it's kept fast-forwarded to
 whatever the current working branch is after each push. Current branch is
-`claude/planner-redesign-features-tmhiy4` (palette + long-press + tumbler);
-before it were `claude/iphone-planner-redesign-p6fw8r` (the iPhone pass) and
+`claude/planner-sub-tabs-redesign-2tp87l` (the sub-tab flyout); before it were
+`claude/planner-redesign-features-tmhiy4` (palette + long-press + tumbler),
+`claude/iphone-planner-redesign-p6fw8r` (the iPhone pass) and
 `claude/oskar-planner-v1-wqpzus` (v1). Both pushes every time:
 
 ```bash
-git push -u origin claude/planner-redesign-features-tmhiy4
-git push origin claude/planner-redesign-features-tmhiy4:main
+git push -u origin claude/planner-sub-tabs-redesign-2tp87l
+git push origin claude/planner-sub-tabs-redesign-2tp87l:main
 ```
 
 ## Architecture map
@@ -95,8 +96,8 @@ src/
     sync.js          push/pull loop (LWW on updated_at), debounced 2s
     backup.js        client-side JSON export/import (merge, LWW)
   themes/            _tokens.css is the contract; paper (default) + mono
-  components/        NavBar (bottom bar <900px; ≥900px an icon rail plus a
-                     separate sub-page column beside it), Card,
+  components/        NavBar (bottom bar <900px; ≥900px an icon rail whose
+                     sub-page tabs fly out from behind it), Card,
                      Check, ColorPicker (itemAccent helper lives here),
                      Icon (the whole inline-SVG glyph set)
   tumbler/
@@ -247,13 +248,26 @@ odds. If a change would create a reason to feel late, it's the wrong change.
   bubble variants were the runners-up if he wants to swap.
 - Left rail appears at ≥900px, so iPad portrait gets it too; Oskar hasn't
   confirmed whether portrait should keep the bottom bar instead.
-- The rail is a fixed icon column plus a 52px gutter the sub-page tabs render
-  into, absolutely positioned beside the section they belong to and centred on
-  it. Their labels are `writing-mode: vertical-rl` — that's what makes them
-  fit, since a horizontal "Collection" needed a 116px panel of its own. Out of
-  flow on purpose: the section icons must never move. Note `.nav-rail` carries
-  no `overflow` property, because a non-visible overflow on either axis forces
-  the other to clip and would slice the sub-tabs off.
+- The rail is a fixed icon column and nothing else. The sub-page tabs are a
+  flyout that slides out from behind it, absolutely positioned beside the
+  section they belong to and centred on it — no lane is reserved, so a section
+  without sub-pages costs no width. Out of flow on purpose: the section icons
+  must never move. Note `.nav-rail` carries no `overflow` property, because a
+  non-visible overflow on either axis forces the other to clip and would slice
+  the flyout off.
+  - "Behind" is real painting order, not a shadow trick: `.rail-wrap` is the
+    stacking context (`isolation: isolate`), `.rail-subs` sits at `z-index: -1`,
+    and `.nav-rail`'s opaque background — a non-positioned in-flow box, painted
+    after negative-z-index descendants — is what hides it. `.rail-group` must
+    stay `z-index: auto` or it becomes the stacking context and the flyout hides
+    behind the wrong thing. The panel wants to stay narrower than the rail's
+    96px so it's fully tucked away at rest.
+  - Labels went back to horizontal: `writing-mode: vertical-rl` only existed to
+    fit the old 52px gutter, and a panel floating over the page can be as wide
+    as its longest word.
+  - It floats over the page rather than pushing it, so `.page` takes a
+    `--space-7` left padding at ≥900px. That's a gutter off the rail, not a lane
+    for the tabs: without it the full-bleed collection grid ran under the panel.
 - The page bloom needs its fade-to-page-color layer in `base.css`. It's a
   165deg gradient in a wide short tile, so its stops don't line up with the
   tile's bottom edge and it left a faint horizontal seam across every page.

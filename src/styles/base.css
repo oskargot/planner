@@ -157,16 +157,24 @@ h1, h2, h3 {
   .app { flex-direction: row; }
   .nav-bottom { display: none; }
 
-  /* The icon column, plus a gutter on its right that the vertical sub-page
-     tabs render into. The gutter is padding rather than a panel: it's always
-     reserved, so the content area never slides sideways between Home and a
-     section with sub-pages, but there's nothing drawn in it when it's empty.
-     52px because a vertical tab is one line-height wide, not one word long. */
+  /* A gutter off the rail, not a lane for the sub-tabs: the flyout floats over
+     the page and full-bleed pages (the collection grid) would otherwise start
+     hard against the hairline and run under it. */
+  .page { padding-left: var(--space-7); }
+
+  /* Just the icon column now — no gutter reserved beside it. The sub-page tabs
+     slide out from behind this column when a section needs them and take no
+     width when it doesn't, so a section without sub-pages isn't paying for an
+     empty lane.
+     `isolation` is load-bearing: it makes this element the stacking context the
+     flyout's negative z-index is measured against, so the flyout hides behind
+     the rail rather than behind the page. */
   .rail-wrap {
     display: flex;
     order: -1;
     flex-shrink: 0;
-    padding-right: 52px;
+    position: relative;
+    isolation: isolate;
     border-right: var(--border-hairline);
     background: var(--bg-surface);
   }
@@ -178,7 +186,10 @@ h1, h2, h3 {
      now, because sub-pages have their own column. */
   /* No overflow property here on purpose: the sub-tabs hang outside this box
      on the right, and any non-visible overflow on one axis forces the other
-     axis to clip too, which would slice them off. */
+     axis to clip too, which would slice them off.
+     The background is opaque and load-bearing — it's what the flyout is hidden
+     behind while it's tucked away. A non-positioned in-flow box paints above a
+     negative-z-index sibling subtree, which is exactly the trick. */
   .nav-rail {
     display: flex;
     flex-direction: column;
@@ -187,31 +198,49 @@ h1, h2, h3 {
     width: 96px;
     padding: var(--space-4) var(--space-2);
     padding-left: calc(var(--space-2) + env(safe-area-inset-left));
+    background: var(--bg-surface);
   }
 
+  /* position: relative, z-index auto — so the group's own content paints above
+     the flyout, but the flyout still belongs to .rail-wrap's stacking context
+     and can therefore go behind .nav-rail. */
   .rail-group { position: relative; }
 
   /* Out of flow and centred on its parent icon: the sections keep fixed
-     positions whichever one is open, which is the point of the whole layout. */
+     positions whichever one is open, which is the point of the whole layout.
+     It floats over the page instead of holding a lane open, so it's a panel
+     with its own surface and shadow rather than bare pills on the page. */
   .rail-subs {
     position: absolute;
     left: 100%;
     top: 50%;
-    transform: translateY(-50%);
+    z-index: -1;
+    transform: translate(0, -50%);
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
-    margin-left: var(--space-1);
+    padding: var(--space-2);
+    border: var(--border-hairline);
+    border-left: none;
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+    background: var(--bg-surface);
+    box-shadow: var(--shadow-lg);
+    animation: rail-subs-out var(--dur-normal) var(--ease-standard);
+  }
+
+  /* Out from under the icon column. The resting state is the visible one, so
+     killing animation (motion off / reduced motion) leaves it simply open. */
+  @keyframes rail-subs-out {
+    from { transform: translate(-100%, -50%); opacity: 0; }
+    to { transform: translate(0, -50%); opacity: 1; }
   }
 }
 
-/* The phone's sub-row pills, turned a quarter turn along with the bar they
-   live in — stacked down the gutter instead of across the screen, each one
-   reading top to bottom. */
+/* Horizontal again: these were written vertically only because they had to fit
+   a 52px gutter. A panel that floats over the page can be as wide as its
+   longest word. */
 .rail-subtab {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  padding: var(--space-3) var(--space-2);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-full);
   font-size: var(--size-sm);
   font-weight: var(--weight-medium);
