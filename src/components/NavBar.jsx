@@ -62,11 +62,10 @@ function SubRow({ tabs, accent, activeId }) {
 }
 
 /*
- * The wide-screen rail: the phone's bottom bar stood on its end — and now so
- * is its sub-row. The sub-page tabs sit directly beside the section they
- * belong to, with their labels written vertically, which is the whole reason
- * they fit: a horizontal "Collection" needed a 116px panel of its own, a
- * vertical one needs about 40px of gutter.
+ * The wide-screen rail: the phone's bottom bar stood on its end. The sub-page
+ * tabs are a flyout that slides out from behind the icon column, beside the
+ * section they belong to, and there is no lane held open for them — a section
+ * without sub-pages costs nothing, and the column is only as wide as its icons.
  *
  * They're absolutely positioned out of the icon column's flow, so the sections
  * keep fixed positions no matter which one is open. That was the original
@@ -91,7 +90,9 @@ function Rail({ section, child }) {
               </NavLink>
               {/* Beside its parent rather than in a column of its own, so which
                   section a sub-page belongs to is positional rather than
-                  something you have to remember. */}
+                  something you have to remember. Keyed by section so switching
+                  sections replays the slide-out; switching between two pages of
+                  the same section doesn't. */}
               {active && s.children && (
                 <div className="rail-subs" aria-label={`${s.label} pages`}>
                   {s.children.map((t) => (
