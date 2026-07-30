@@ -33,15 +33,34 @@ imports it.
 
 ## Deploying (jellybot)
 
-- Client change: `git pull && npm run build` on jellybot — that's it. The
-  server serves `dist/` from disk; cache headers make devices pick it up on
-  next load. Never re-introduce uncached `index.html`/`sw.js` (Safari will
-  freeze users on stale builds — this bit us once already).
-- Server change: also `sudo systemctl restart planner` (systemd unit runs
-  `node server/index.js`; exposed via `tailscale serve --bg 8790`).
-- Builds are slow on jellybot's AMD E-350; building elsewhere and copying
-  `dist/` is acceptable. Claude Code on jellybot is pinned to v2.1.14
-  (`DISABLE_UPDATES`, AVX incompatibility) — do not upgrade it.
+Automatic: push to `main` → `.github/workflows/build.yml` builds the client and
+force-pushes `dist/` to the `deploy` branch → `planner-update.timer` on
+jellybot picks it up within five minutes (`deploy/update.sh`). Full setup and
+troubleshooting in `deploy/README.md`.
+
+- The build runs on GitHub's runner, never on jellybot — the AMD E-350 takes
+  minutes to run Vite, which is why deploying by hand was avoidable work.
+- **jellybot pulls; GitHub never reaches in.** No tailnet credential is stored
+  on GitHub, deliberately: the app has no auth of its own, so the tailnet is
+  the entire security boundary and CI is not invited inside it.
+- The updater swaps a `dist` → `releases/<sha>` symlink with an atomic rename;
+  it never writes into a live `dist/`. A half-written directory can serve an
+  `index.html` referencing assets that aren't there yet, and index.html is
+  no-cache while assets are immutable, so devices cache the broken pairing.
+  Never re-introduce uncached `index.html`/`sw.js` either (Safari will freeze
+  users on stale builds — this bit us once already).
+- Restarts only happen when `server/**` changed; a client-only change is just
+  the symlink swap, with no dropped sync requests. `server/package.json`
+  changes trigger `npm i` first (better-sqlite3 is native and slow there).
+- Anything that looks wrong — missing `index.html`/`assets`/`sw.js`, diverged
+  local `main`, failed `npm i` — aborts WITHOUT swapping. Leaving the old build
+  serving always beats an unattended white-screen.
+- Manual fallback, still fine: `git pull && npm run build`, plus
+  `sudo systemctl restart planner` for server changes (systemd unit runs
+  `node server/index.js`; exposed via `tailscale serve --bg 8790`). Stop the
+  automation with `sudo systemctl disable --now planner-update.timer`.
+- Claude Code on jellybot is pinned to v2.1.14 (`DISABLE_UPDATES`, AVX
+  incompatibility) — do not upgrade it.
 - Nightly backup cron runs `server/backup.sh` (sqlite `.backup`, 30 dailies).
 
 ## Git

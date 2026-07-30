@@ -1,0 +1,18 @@
+[Unit]
+Description=Check for a new planner build every five minutes
+
+[Timer]
+# Catches up shortly after a reboot, then every five minutes.
+OnBootSec=2min
+OnUnitActiveSec=5min
+
+# If jellybot was asleep or off when a tick was due, run once on wake rather
+# than pretending the check happened.
+Persistent=true
+
+# Spread the check off the exact minute boundary. Costs nothing, and keeps this
+# from lining up with the nightly backup cron every time.
+RandomizedDelaySec=30
+
+[Install]
+WantedBy=timers.target
