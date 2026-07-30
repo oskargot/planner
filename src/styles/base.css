@@ -18,11 +18,18 @@ body {
   line-height: var(--leading-normal);
   color: var(--text-primary);
   background-color: var(--bg-page);
-  /* rainbow bloom across the top, then the paper tooth over the whole page */
-  background-image: var(--gradient-page-glow), var(--texture-page);
-  background-size: 100% 420px, 14px 14px;
-  background-repeat: no-repeat, repeat;
-  background-position: top center, top left;
+  /* Rainbow bloom across the top, a fade-out over it, then the paper tooth.
+     The middle layer is load-bearing: the bloom is a 165deg gradient in a wide,
+     short box, so its axis runs diagonally and its stops don't line up with the
+     bottom edge of the tile — one side reached transparent while the other was
+     still tinted, leaving a faint horizontal seam across the page. Fading to
+     the page color over the same tile guarantees it lands on exactly the
+     background beneath it, whatever the angle. */
+  background-image: var(--texture-page), linear-gradient(180deg, transparent 45%, var(--bg-page) 100%),
+    var(--gradient-page-glow);
+  background-size: 14px 14px, 100% 420px, 100% 420px;
+  background-repeat: repeat, no-repeat, no-repeat;
+  background-position: top left, top center, top center;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
 }
@@ -144,28 +151,58 @@ h1, h2, h3 {
   background-image: var(--gradient-rainbow);
 }
 
-.nav-rail { display: none; }
+.rail-wrap { display: none; }
 
 @media (min-width: 900px) {
   .app { flex-direction: row; }
   .nav-bottom { display: none; }
+
+  /* Icon column + sub-page column, side by side. */
+  .rail-wrap {
+    display: flex;
+    order: -1;
+    flex-shrink: 0;
+    border-right: var(--border-hairline);
+    background: var(--bg-surface);
+  }
+
+  /* Centred with a generous gap rather than stretched edge to edge:
+     space-evenly across a 800px-tall iPad put Home in the top corner and Rocks
+     in the bottom one, ~230px apart, which reads as stretched rather than
+     spread. What matters is that these positions never change — and they can't
+     now, because sub-pages have their own column. */
   .nav-rail {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
-    order: -1;
+    justify-content: center;
+    gap: var(--space-6);
     width: 96px;
     padding: var(--space-4) var(--space-2);
     padding-left: calc(var(--space-2) + env(safe-area-inset-left));
-    border-right: var(--border-hairline);
     overflow-y: auto;
   }
-}
 
-.rail-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  /* Holds its width whether or not the section has sub-pages, so the content
+     area doesn't slide sideways between Home and everywhere else. */
+  .rail-subs {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-2);
+    width: 116px;
+    padding: var(--space-4) var(--space-2);
+    border-left: var(--border-hairline);
+    background: var(--bg-surface-alt);
+    overflow-y: auto;
+  }
+
+  /* On Home — the one section with no sub-pages — the panel keeps its width
+     but drops its fill, so it reads as margin rather than as an empty box
+     someone forgot to populate. */
+  .rail-subs.empty {
+    background: none;
+    border-left-color: transparent;
+  }
 }
 
 .rail-tab {
@@ -190,12 +227,14 @@ h1, h2, h3 {
   border-left-color: var(--tab-accent, var(--accent-1));
 }
 
+/* Sized like the phone's sub-row pills rather than like the icon labels —
+   this column is the phone's sub-row, turned on its side. */
 .rail-subtab {
   text-align: center;
-  font-size: var(--size-xs);
+  font-size: var(--size-sm);
   font-weight: var(--weight-medium);
   color: var(--text-secondary);
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-2) var(--space-2);
   border-radius: var(--radius-full);
 }
 
@@ -352,8 +391,28 @@ h1, h2, h3 {
   gap: var(--space-3);
 }
 .home-grid .card { margin-bottom: 0; }
+
+/*
+ * Two columns above 700px, not three. Habits and Tasks are the two cards with
+ * real length to them, so each heads a column; Studio and Rocks are short and
+ * sit underneath. Three columns made every card too narrow to say anything —
+ * in particular too narrow for the habits calendar to sit beside its list.
+ *
+ * The columns are explicit rather than left to source order, because the DOM
+ * order is the phone's (one card per row, habits → tasks → studio → rocks)
+ * and that's the order that should survive on a narrow screen.
+ */
 @media (min-width: 700px) {
-  .home-grid { grid-template-columns: 1fr 1fr 1fr; gap: var(--space-4); }
+  .home-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    align-items: start;
+  }
+  .home-grid > .card-habits { grid-column: 1; }
+  .home-grid > .card-studio { grid-column: 1; }
+  .home-grid > .card-inventory { grid-column: 1; }
+  .home-grid > .card-tasks { grid-column: 2; }
+  .home-grid > .card-tumbler { grid-column: 2; }
 }
 
 /* Reclaim the horizontal room the habits split needs on a small phone. */
@@ -441,11 +500,9 @@ h1, h2, h3 {
   align-items: start;
 }
 
-/* In the three-across grid above 700px the card is far too narrow to split,
-   so the list drops back under the calendar. */
-@media (min-width: 700px) {
-  .habits-split { grid-template-columns: minmax(0, 1fr); }
-}
+/* Stays split at every width now that Habits heads a half-width column rather
+   than a third-width one. It stacked above 700px back when the card was one of
+   three across and simply had nowhere to put the list. */
 
 .habit-minis { min-width: 0; }
 .habit-minis > * + * { margin-top: var(--space-2); }
@@ -1059,9 +1116,12 @@ h1, h2, h3 {
   font-size: var(--size-2xs);
 }
 
-/* Stacked under the calendar (wide grid) it needs its old bottom gap back. */
+/* The calendar gets more room in the half-width card, and the cells stop being
+   cramped enough to need the sub-xs day numbers. */
 @media (min-width: 700px) {
-  .mini-month { margin-bottom: var(--space-3); }
+  .habits-split { grid-template-columns: minmax(0, 210px) minmax(0, 1fr); }
+  .mini-month .heat-cell { font-size: var(--size-xs); }
+  .mini-month .heat-weekday { font-size: var(--size-xs); }
 }
 
 .mini-month .month-label {

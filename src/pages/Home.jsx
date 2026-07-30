@@ -29,6 +29,10 @@ import Icon from '../components/Icon.jsx';
 import { itemAccent } from '../components/ColorPicker.jsx';
 import { SizeChip } from './Tasks.jsx';
 
+// Tasks heads a full-height column on wide screens, so a five-row preview left
+// most of it empty. Still a preview — the card links to the whole list.
+const LIST_LIMIT = 8;
+
 export default function Home() {
   const balance = useBalance();
   const earned = useEarnedToday();
@@ -50,8 +54,9 @@ export default function Home() {
         </div>
       </header>
       <Greeting />
-      {/* Phone order (§ iPhone pass): habits, then tasks, then studio — one
-          full-width card each, rather than two narrow columns. */}
+      {/* DOM order is the phone's: one full-width card each, habits → tasks
+          → studio → rocks. The wide layout re-columns them in CSS rather than
+          reordering here, so the narrow reading order stays intact. */}
       <div className="home-grid">
         <HabitsCard />
         <TasksCard />
@@ -90,10 +95,10 @@ function Greeting() {
   );
 }
 
-// "Habits extended": the month calendar sits top-left with today's checkable
-// rows beside it, so the card reads as one glance-and-tap unit. Below 700px
-// they're side by side; in the multi-column grid above that the card is too
-// narrow, so the list drops under the calendar.
+// "Habits extended": the month calendar sits left with today's checkable rows
+// beside it, so the card reads as one glance-and-tap unit. It splits at every
+// width now — it used to stack above 700px, when Habits was one of three
+// columns and simply had nowhere to put the list.
 function HabitsCard() {
   const today = logicalDay();
   const habits = useLiveQuery(
@@ -128,7 +133,7 @@ function HabitsCard() {
   }
 
   return (
-    <Card title="Habits" accent={3} to="/habits">
+    <Card title="Habits" accent={3} to="/habits" className="card-habits">
       <div className="habits-split">
         <Link to="/habits/month" className="mini-month" aria-label="Open month view">
           <div className="month-label">{monthLabel(year, month)}</div>
@@ -192,10 +197,10 @@ function TasksCard() {
   );
 
   return (
-    <Card title={`Tasks · ${open.length}`} accent={2} to="/tasks">
+    <Card title={`Tasks · ${open.length}`} accent={2} to="/tasks" className="card-tasks">
       {open.length === 0 && <p className="empty">All clear.</p>}
       <div className="stack-sm">
-        {open.slice(0, 5).map((t, i) => (
+        {open.slice(0, LIST_LIMIT).map((t, i) => (
           <div className="row" key={t.id}>
             <Check
               on={false}
@@ -231,7 +236,7 @@ function StudioCard() {
     .slice(0, 4);
 
   return (
-    <Card title="Studio" accent={4} to="/studio">
+    <Card title="Studio" accent={4} to="/studio" className="card-studio">
       {projects.length === 0 && <p className="empty">No projects yet.</p>}
       {projects.length > 0 && rows.length === 0 && (
         <p className="empty">
@@ -280,7 +285,7 @@ function TumblerCard() {
   const ready = slots.filter((s) => barrelState(bySlot.get(s), now) === 'ready').length;
 
   return (
-    <Card title={ready > 0 ? `Rocks · ${ready} ready` : 'Rocks'} accent={6} to="/tumbler">
+    <Card title={ready > 0 ? `Rocks · ${ready} ready` : 'Rocks'} accent={6} to="/tumbler" className="card-tumbler">
       <div className="stack-sm">
         {slots.map((slot) => {
           const barrel = bySlot.get(slot);
@@ -310,7 +315,7 @@ function InventoryCard() {
   );
   if (unredeemed.length === 0) return null;
   return (
-    <Card title="Inventory" accent={1} to="/shop/inventory">
+    <Card title="Inventory" accent={1} to="/shop/inventory" className="card-inventory">
       <div className="stack-sm">
         {unredeemed.map((p) => (
           <div className="row" key={p.id}>

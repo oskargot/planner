@@ -94,7 +94,8 @@ src/
     sync.js          push/pull loop (LWW on updated_at), debounced 2s
     backup.js        client-side JSON export/import (merge, LWW)
   themes/            _tokens.css is the contract; paper (default) + mono
-  components/        NavBar (bottom bar <900px, left rail ≥900px), Card,
+  components/        NavBar (bottom bar <900px; ≥900px an icon rail plus a
+                     separate sub-page column beside it), Card,
                      Check, ColorPicker (itemAccent helper lives here),
                      Icon (the whole inline-SVG glyph set)
   tumbler/
@@ -215,11 +216,12 @@ odds. If a change would create a reason to feel late, it's the wrong change.
   once he's lived with it for a week.
 - Home habits calendar shows the calendar month; a rolling ~5-week window
   was floated as an alternative if early-month emptiness annoys.
-- Phone Home is one card per row (habits → tasks → studio → rocks →
-  inventory), and
-  the habits card splits calendar-left / today's-rows-right below 700px. In
-  the ≥700px three-across grid the card is too narrow to split, so the list
-  drops back under the calendar.
+- Home is one card per row on a phone and TWO columns above 700px: habits →
+  studio → inventory on the left, tasks → rocks on the right, placed by
+  explicit `grid-column` so the DOM keeps the phone's reading order. It was
+  three columns until Oskar's iPad markup; at a third of the width no card
+  could say much, and the habits calendar had nowhere to put its list. The
+  habits card now splits calendar-left / rows-right at every width.
 - The store's awning + shelf cabinet is ported from mochi house. Its tokens
   have now been recolored twice: warm-wood brown → cream → the current cool
   lilac-grey, each time because the furniture fought the page color. The
@@ -233,6 +235,16 @@ odds. If a change would create a reason to feel late, it's the wrong change.
   bubble variants were the runners-up if he wants to swap.
 - Left rail appears at ≥900px, so iPad portrait gets it too; Oskar hasn't
   confirmed whether portrait should keep the bottom bar instead.
+- The rail is two columns: sections in a fixed icon column, the active
+  section's sub-pages in their own column beside it — the phone's bottom bar
+  and sub-row, stood on end. They used to nest, which meant selecting a
+  section with three sub-pages shoved every section below it down the rail.
+  The sub-column keeps its width when empty (Home) so the content area doesn't
+  slide sideways. Its items are centred rather than aligned to their parent
+  icon; ask before changing that, it was a judgement call.
+- The page bloom needs its fade-to-page-color layer in `base.css`. It's a
+  165deg gradient in a wide short tile, so its stops don't line up with the
+  tile's bottom edge and it left a faint horizontal seam across every page.
 - Oskar's live DB imported before task/habit colors existed, so his rows
   use auto-rainbow unless hand-pinned (re-import would restore mochi colors
   but overwrites edits made since — ask first).
