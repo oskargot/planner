@@ -9,11 +9,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/apple-touch-icon.png'],
       manifest: {
-        name: 'Binder',
-        short_name: 'Binder',
+        name: 'Planner',
+        short_name: 'Planner',
         description: 'Personal planner — tasks, habits, projects, shop.',
-        theme_color: '#fbf7ef',
-        background_color: '#fbf7ef',
+        theme_color: '#f7f6fa',
+        background_color: '#f7f6fa',
         display: 'standalone',
         start_url: '/',
         icons: [

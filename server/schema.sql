@@ -122,3 +122,49 @@ CREATE TABLE IF NOT EXISTS meta (
   value       TEXT NOT NULL,
   updated_at  INTEGER NOT NULL
 );
+
+-- The tumbler (§ the rock shop). A separate economy: grit never touches the
+-- points ledger above, and these tables never appear in a points query.
+-- tumbler_ledger is append-only in exactly the same way `ledger` is — the grit
+-- balance AND the upgrade levels are both derived from its rows, so two
+-- devices spending offline merge instead of clobbering a counter.
+
+CREATE TABLE IF NOT EXISTS tumbler_barrels (
+  id          TEXT PRIMARY KEY,
+  slot        INTEGER NOT NULL,
+  cycle_key   TEXT,
+  seed        TEXT,
+  species     TEXT,               -- outcome is decided at load time, not at
+  grade       INTEGER,            -- open time, so it can't be rerolled
+  started_at  INTEGER,            -- NULL = idle
+  duration_ms INTEGER NOT NULL DEFAULT 0,
+  collected_at INTEGER,
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  deleted     INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_tumbler_barrels_updated ON tumbler_barrels(updated_at);
+
+CREATE TABLE IF NOT EXISTS gems (
+  id          TEXT PRIMARY KEY,
+  seed        TEXT NOT NULL,
+  species     TEXT NOT NULL,
+  grade       INTEGER NOT NULL,
+  cycle_key   TEXT,
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  deleted     INTEGER NOT NULL DEFAULT 0   -- crushed; the row stays as the log
+);
+CREATE INDEX IF NOT EXISTS idx_gems_updated ON gems(updated_at);
+
+CREATE TABLE IF NOT EXISTS tumbler_ledger (
+  id          TEXT PRIMARY KEY,
+  delta       INTEGER NOT NULL,
+  reason      TEXT NOT NULL,      -- 'crush' | 'upgrade'
+  upgrade_key TEXT,               -- which upgrade a spend bought; levels are
+  note        TEXT,               -- counted from these rows
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  deleted     INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_tumbler_ledger_updated ON tumbler_ledger(updated_at);

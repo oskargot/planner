@@ -1,0 +1,77 @@
+# Builds the client and publishes it to the `deploy` branch. jellybot's
+# updater timer watches that branch and unpacks whatever lands there.
+#
+# The point of doing it here rather than on jellybot: the E-350 takes minutes
+# to run a Vite build, and a deploy that slow is a deploy you avoid doing.
+# This also means nothing on the tailnet has to be reachable from GitHub —
+# jellybot pulls, GitHub never pushes to it.
+
+name: build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Only to push the built output back to the `deploy` branch of this same repo.
+# No other credential is needed, and none is stored: the tailnet stays out of
+# GitHub entirely.
+permissions:
+  contents: write
+
+concurrency:
+  # A newer commit makes an in-flight build pointless — cancel it rather than
+  # racing two force-pushes onto `deploy`.
+  group: deploy-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      # Fail here rather than publishing a build jellybot would refuse (or
+      # worse, accept) — a white-screened app on the far end is the one
+      # outcome an unattended deploy must never produce.
+      - name: Sanity-check the build
+        run: |
+          test -f dist/index.html || { echo "no dist/index.html"; exit 1; }
+          test -d dist/assets    || { echo "no dist/assets"; exit 1; }
+          test -f dist/sw.js     || { echo "no dist/sw.js"; exit 1; }
+
+      # Records which source commit produced this build. jellybot reads it to
+      # work out whether server/ changed since what it's currently running,
+      # and so whether it needs to restart the service.
+      - name: Stamp the build
+        run: |
+          printf '{"source_sha":"%s","built_at":"%s","run":"%s"}\n' \
+            "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$GITHUB_RUN_ID" \
+            > dist/build-info.json
+
+      # A fresh repo each time, force-pushed: `deploy` is always exactly one
+      # commit with no history, so republishing every build never grows the
+      # repository. Rollback lives on jellybot, which keeps the last few
+      # unpacked releases on disk.
+      - name: Publish to the deploy branch
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd dist
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "build ${GITHUB_SHA::12}"
+          git push -q --force \
+            "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            HEAD:refs/heads/deploy

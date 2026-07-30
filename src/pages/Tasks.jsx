@@ -5,6 +5,8 @@ import { addTask, completeTask, deleteTask, updateTask, SIZE_POINTS } from '../d
 import { floatPoints } from '../fx.js';
 import Check from '../components/Check.jsx';
 import ColorPicker, { itemAccent } from '../components/ColorPicker.jsx';
+import useLongPress from '../useLongPress.js';
+import Icon from '../components/Icon.jsx';
 
 // Sizes get their own soft tints: bigger = warmer.
 const SIZE_ACCENT = { S: 4, M: 3, L: 1 };
@@ -26,6 +28,11 @@ export default function Tasks() {
         </span>
       </h1>
       <AddTask />
+      {tasks.length > 0 && (
+        <div className="longpress-hint" style={{ marginTop: 'var(--space-2)' }}>
+          <Icon name="pencil" size={12} /> hold a task to edit
+        </div>
+      )}
       <div style={{ marginTop: 'var(--space-4)' }}>
         {tasks.length === 0 && <p className="empty">Nothing to do. Suspicious.</p>}
         {tasks.map((t, i) => (
@@ -104,6 +111,9 @@ export function SizeChip({ size, done = false }) {
 function TaskRow({ task, index }) {
   const [editing, setEditing] = useState(false);
   const accent = itemAccent(task, index);
+  // Editing used to open on a plain tap of the row, which made a mis-aimed
+  // check feel like a trap. It's a hold now, same as the shop and habits.
+  const { handlers, holding } = useLongPress(() => setEditing(true));
 
   async function complete(e) {
     floatPoints(e.currentTarget, SIZE_POINTS[task.size]);
@@ -113,9 +123,17 @@ function TaskRow({ task, index }) {
   if (editing) return <TaskEditor task={task} close={() => setEditing(false)} />;
 
   return (
-    <div className="list-item" style={{ borderLeft: `4px solid var(--accent-${accent})` }}>
-      <Check on={false} accent={accent} onClick={complete} label={`Complete ${task.title}`} />
-      <div className="grow" onClick={() => setEditing(true)}>
+    <div
+      className={`list-item longpress${holding ? ' holding' : ''}`}
+      style={{ borderLeft: `4px solid var(--accent-${accent})` }}
+      {...handlers}
+    >
+      {/* The checkbox opts out of the hold: it's the row's primary action and
+          holding it should do nothing, not open an editor. */}
+      <span onPointerDown={(e) => e.stopPropagation()} style={{ display: 'inline-flex' }}>
+        <Check on={false} accent={accent} onClick={complete} label={`Complete ${task.title}`} />
+      </span>
+      <div className="grow">
         <div className="item-title">{task.title}</div>
         {task.notes && <div className="muted">{task.notes}</div>}
       </div>

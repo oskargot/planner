@@ -236,10 +236,12 @@ h1, h2, h3 {
   background: linear-gradient(to bottom, var(--tab-accent-soft, transparent), transparent);
 }
 
-/* the active section's glyph takes its own accent; the label stays ink */
+/* the active section's glyph takes its own accent; the label stays ink.
+   The deep variant, not the pastel — a 22px glyph in lemon on white is a
+   smudge. */
 .nav-tab.active .nav-icon,
 .rail-tab.active .nav-icon {
-  color: var(--tab-accent, var(--accent-1));
+  color: var(--tab-accent-ink, var(--accent-1-ink));
 }
 
 .nav-subtab {
@@ -360,11 +362,34 @@ h1, h2, h3 {
   .home-grid .card::before { left: var(--space-4); right: var(--space-4); }
 }
 
-.home-header { margin-bottom: var(--space-4); }
+.home-header { margin-bottom: var(--space-3); }
+
+/* The greeting sits between the wordmark and the cards. Display face for the
+   hello so it reads as a heading rather than as another card's label. */
+.greeting {
+  margin-bottom: var(--space-4);
+}
+
+.greeting-hello {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--size-lg);
+  color: var(--text-primary);
+  line-height: var(--leading-tight);
+}
+
+/* min-height holds the row open on the days there's nothing to report, so the
+   cards below don't shift when a line appears. */
+.greeting-line {
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+  min-height: 1.5em;
+}
 
 .home-header .wordmark {
   font-size: var(--size-2xl);
-  background-image: var(--gradient-rainbow-smooth);
+  background-image: var(--gradient-rainbow-ink);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -539,7 +564,9 @@ h1, h2, h3 {
   align-items: center;
   justify-content: center;
   font-size: var(--size-sm);
-  color: var(--text-inverse);
+  /* The tick sits on top of the accent fill, which is a pale pastel in Paper —
+     --text-inverse (white) vanishes on mint and lemon. See --on-accent. */
+  color: var(--on-accent);
   transition: background var(--dur-fast) var(--ease-standard),
     border-color var(--dur-fast) var(--ease-standard);
 }
@@ -875,7 +902,9 @@ h1, h2, h3 {
   display: grid;
   place-items: center;
   background-image: linear-gradient(150deg, var(--box-accent-soft), var(--bg-surface) 72%);
-  color: var(--box-accent);
+  /* the glyph has to read against a near-white wash, so it takes the deep
+     variant rather than the pastel itself */
+  color: var(--box-accent-ink);
 }
 
 .box-name {
@@ -1095,6 +1124,278 @@ h1, h2, h3 {
   border-radius: var(--radius-md);
   padding: var(--space-2);
   margin-bottom: var(--space-3);
+}
+
+/* ---------- the tumbler ----------
+ * A separate economy with its own furniture. It reuses the shop's cabinet and
+ * planks on the shelf screen on purpose: the two are both "things you own on a
+ * shelf", and building a second set of furniture would say they're unrelated.
+ */
+
+.tumbler-blurb {
+  color: var(--text-secondary);
+  font-size: var(--size-sm);
+  margin-bottom: var(--space-4);
+}
+
+/* the grit tally, distinguished from the points tally by hue alone — the
+   glyph differs too (gem vs spark), so Mono doesn't lose the distinction */
+.points-tally.grit { color: var(--accent-6-ink); }
+
+.barrels {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.barrel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  border: var(--border-hairline);
+  box-shadow: var(--shadow-sm);
+}
+
+/* A finished barrel is the one thing on this screen that wants attention, so
+   it gets a real border rather than a tint — the tint alone would vanish in
+   Mono, and "which barrel is done" is meaning, not decoration. */
+.barrel.ready {
+  border: 2px solid var(--accent-6);
+  background: var(--accent-6-soft);
+}
+
+.barrel-face {
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: var(--bg-sunken);
+  color: var(--text-secondary);
+}
+
+.barrel.ready .barrel-face {
+  background: var(--bg-surface);
+  color: var(--accent-6-ink);
+}
+
+/* Slow enough to read as "turning", not as a spinner asking you to wait —
+   nothing here is loading. Killed by the global motion-off rule. */
+.barrel-face.spinning svg { animation: barrel-turn 3.2s linear infinite; }
+
+@keyframes barrel-turn {
+  to { transform: rotate(360deg); }
+}
+
+.barrel-title {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--size-md);
+}
+
+.cycle-row {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.cycle-btn {
+  flex-direction: column;
+  gap: 0;
+  padding: var(--space-2) var(--space-3);
+  line-height: var(--leading-tight);
+}
+
+.cycle-name { font-weight: var(--weight-bold); }
+.cycle-time { font-size: var(--size-2xs); color: var(--text-muted); }
+
+/* ---------- the reveal ---------- */
+
+.reveal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: var(--space-5);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.reveal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: 320px;
+  width: 100%;
+  animation: reveal-in var(--dur-normal) var(--ease-bounce);
+}
+
+@keyframes reveal-in {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.reveal-name {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--size-xl);
+  text-align: center;
+}
+
+.reveal-rare {
+  font-size: var(--size-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-6-ink);
+  background: var(--accent-6-soft);
+  padding: 1px var(--space-3);
+  border-radius: var(--radius-full);
+}
+
+/* ---------- workshop ---------- */
+
+.section-heading {
+  font-family: var(--font-display);
+  font-size: var(--size-lg);
+  font-weight: var(--weight-bold);
+  margin-bottom: var(--space-3);
+}
+
+.list-item.upgrade + .list-item.upgrade { margin-top: var(--space-2); }
+
+.upgrade-level {
+  margin-left: var(--space-2);
+  font-size: var(--size-xs);
+  font-weight: var(--weight-normal);
+  color: var(--text-muted);
+}
+
+/* ---------- gems ---------- */
+
+.gem { display: block; }
+
+.gem-shelf { align-items: end; }
+
+.gem-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+}
+
+.gem-caption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: var(--leading-tight);
+  text-align: center;
+}
+
+.gem-grade {
+  font-size: var(--size-2xs);
+  font-weight: var(--weight-bold);
+  color: var(--shelf-ink);
+}
+.gem-species { font-size: var(--size-2xs); color: var(--shelf-ink); }
+
+/* ---------- collection log ---------- */
+
+/* The species column has to fit "Moonstone" on one line at 390px, dot and all
+   — at 1.4fr it broke mid-word. */
+.collection {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) repeat(5, minmax(0, 1fr));
+  gap: var(--space-1);
+  align-items: center;
+}
+
+.collection-corner { min-height: 1px; }
+
+.collection-head {
+  font-size: var(--size-2xs);
+  color: var(--text-muted);
+  text-align: center;
+  line-height: var(--leading-tight);
+}
+
+.collection-species {
+  font-size: var(--size-xs);
+  font-weight: var(--weight-medium);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding-right: var(--space-1);
+  overflow-wrap: break-word;
+}
+
+.rare-dot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  background: var(--accent-6);
+}
+
+/* Empty cells are a sunken well with a ghost glyph; filled ones lift onto the
+   surface. The difference has to survive a flat theme, so it's background and
+   border rather than color. */
+.collection-cell {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+  color: var(--text-muted);
+  opacity: 0.55;
+}
+
+.collection-cell.filled {
+  background: var(--bg-surface);
+  border: var(--border-hairline);
+  opacity: 1;
+}
+
+/* ---------- long-press to edit ---------- */
+
+/* Goes on anything wired to useLongPress. The two -webkit rules are the ones
+   that matter on iOS: without them Safari raises its own callout menu and
+   text-selection handles in the middle of the hold. */
+.longpress {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: pointer;
+  transition: transform var(--dur-slow) var(--ease-standard),
+    box-shadow var(--dur-slow) var(--ease-standard);
+}
+
+/* Presses in over the length of the hold. With the pencils gone this is the
+   only feedback that the gesture is being received, so it is not optional
+   decoration — it also survives motion:off, where the transition is stripped
+   but the transform still applies at the end state. */
+.longpress.holding {
+  transform: scale(0.96);
+  box-shadow: var(--shadow-sm);
+}
+
+/* A quiet one-liner where a screen's only edit path is the hold. Cheaper than
+   a control per row, which is what this replaced. */
+.longpress-hint {
+  font-size: var(--size-xs);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
 }
 
 /* motion off: kill every animation/transition */

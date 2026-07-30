@@ -1,8 +1,9 @@
-# Binder (name TBD — one constant in `src/config.js`)
+# Planner (`APP_NAME` in `src/config.js`)
 
 Personal planner PWA for Oskar (he/him). Single user, no auth ever — the
 tailnet is the security boundary. Tasks, habits, and projects earn points
-that get spent in a personal shop. Local-first: IndexedDB (Dexie) is the
+that get spent in a personal shop. A separate idle game (the tumbler) runs
+on its own currency and deliberately does not connect to any of that. Local-first: IndexedDB (Dexie) is the
 source of truth for the UI; a small Hono+SQLite server on `jellybot` (a slow
 Debian box on the tailnet) is a sync target and backup point, never a
 dependency. The app must work fully offline.
@@ -20,33 +21,59 @@ npm run server       # sync server (or: node server/index.js)
 cd server && npm i   # server deps are a separate package (better-sqlite3)
 ```
 
-There are no tests or linters wired up. Verification is done by building and
-driving the app in a browser (playwright-core + the preinstalled Chromium
-works well for screenshots).
+```bash
+npm run build && node scripts/shots.mjs [outdir]   # every screen, phone + iPad
+```
+
+There are no tests or linters wired up. Verification is building, then driving
+the app in a browser. `scripts/shots.mjs` is the harness for that: it serves
+`dist/`, seeds a realistic IndexedDB through the raw indexedDB API, and shoots
+every screen at 390×844 and 1180×820. It is dev-only — nothing in `src/`
+imports it.
 
 ## Deploying (jellybot)
 
-- Client change: `git pull && npm run build` on jellybot — that's it. The
-  server serves `dist/` from disk; cache headers make devices pick it up on
-  next load. Never re-introduce uncached `index.html`/`sw.js` (Safari will
-  freeze users on stale builds — this bit us once already).
-- Server change: also `sudo systemctl restart planner` (systemd unit runs
-  `node server/index.js`; exposed via `tailscale serve --bg 8790`).
-- Builds are slow on jellybot's AMD E-350; building elsewhere and copying
-  `dist/` is acceptable. Claude Code on jellybot is pinned to v2.1.14
-  (`DISABLE_UPDATES`, AVX incompatibility) — do not upgrade it.
+Automatic: push to `main` → `.github/workflows/build.yml` builds the client and
+force-pushes `dist/` to the `deploy` branch → `planner-update.timer` on
+jellybot picks it up within five minutes (`deploy/update.sh`). Full setup and
+troubleshooting in `deploy/README.md`.
+
+- The build runs on GitHub's runner, never on jellybot — the AMD E-350 takes
+  minutes to run Vite, which is why deploying by hand was avoidable work.
+- **jellybot pulls; GitHub never reaches in.** No tailnet credential is stored
+  on GitHub, deliberately: the app has no auth of its own, so the tailnet is
+  the entire security boundary and CI is not invited inside it.
+- The updater swaps a `dist` → `releases/<sha>` symlink with an atomic rename;
+  it never writes into a live `dist/`. A half-written directory can serve an
+  `index.html` referencing assets that aren't there yet, and index.html is
+  no-cache while assets are immutable, so devices cache the broken pairing.
+  Never re-introduce uncached `index.html`/`sw.js` either (Safari will freeze
+  users on stale builds — this bit us once already).
+- Restarts only happen when `server/**` changed; a client-only change is just
+  the symlink swap, with no dropped sync requests. `server/package.json`
+  changes trigger `npm i` first (better-sqlite3 is native and slow there).
+- Anything that looks wrong — missing `index.html`/`assets`/`sw.js`, diverged
+  local `main`, failed `npm i` — aborts WITHOUT swapping. Leaving the old build
+  serving always beats an unattended white-screen.
+- Manual fallback, still fine: `git pull && npm run build`, plus
+  `sudo systemctl restart planner` for server changes (systemd unit runs
+  `node server/index.js`; exposed via `tailscale serve --bg 8790`). Stop the
+  automation with `sudo systemctl disable --now planner-update.timer`.
+- Claude Code on jellybot is pinned to v2.1.14 (`DISABLE_UPDATES`, AVX
+  incompatibility) — do not upgrade it.
 - Nightly backup cron runs `server/backup.sh` (sqlite `.backup`, 30 dailies).
 
 ## Git
 
 `main` is what Oskar pulls on jellybot, and it's kept fast-forwarded to
 whatever the current working branch is after each push. Current branch is
-`claude/iphone-planner-redesign-p6fw8r` (the iPhone pass); the v1 branch was
-`claude/oskar-planner-v1-wqpzus`. Both pushes every time:
+`claude/planner-redesign-features-tmhiy4` (palette + long-press + tumbler);
+before it were `claude/iphone-planner-redesign-p6fw8r` (the iPhone pass) and
+`claude/oskar-planner-v1-wqpzus` (v1). Both pushes every time:
 
 ```bash
-git push -u origin claude/iphone-planner-redesign-p6fw8r
-git push origin claude/iphone-planner-redesign-p6fw8r:main
+git push -u origin claude/planner-redesign-features-tmhiy4
+git push origin claude/planner-redesign-features-tmhiy4:main
 ```
 
 ## Architecture map
@@ -54,17 +81,25 @@ git push origin claude/iphone-planner-redesign-p6fw8r:main
 ```
 src/
   config.js          APP_NAME + declarative NAV (add a page = entry + route)
+  greeting.js        pure: time-of-day hello + the ranked flavor lines
+  useLongPress.js    hold-to-edit gesture (iOS callout/selection suppression)
   db/
     time.js          logicalDay() and ALL date math — never elsewhere
     db.js            Dexie schema, insertRow/updateRow/softDelete, meta
-    actions.js       every mutation; the ONLY place ledger rows are written
-    selectors.js     balance, earned-today, heat-map ratios, staleness
+    actions.js       every POINTS mutation; only place `ledger` is written
+    tumbler.js       every GRIT mutation; only place `tumbler_ledger` is
+                     written. Never touches points, and vice versa.
+    selectors.js     balance, earned-today, heat ratios, staleness,
+                     useGreetingState (one snapshot for the Home line)
     sync.js          push/pull loop (LWW on updated_at), debounced 2s
     backup.js        client-side JSON export/import (merge, LWW)
   themes/            _tokens.css is the contract; paper (default) + mono
   components/        NavBar (bottom bar <900px, left rail ≥900px), Card,
                      Check, ColorPicker (itemAccent helper lives here),
                      Icon (the whole inline-SVG glyph set)
+  tumbler/
+    gems.js          pure generation: species, grades, cycles, odds, geometry
+    Gem.jsx          the SVG renderer (dumb; all maths lives in gems.js)
   pages/             one file per screen
 server/
   index.js           GET/POST /api/sync, LWW upserts, serves dist/, cache
@@ -72,6 +107,7 @@ server/
   schema.sql         SQLite schema (mirror Dexie when changing either)
 scripts/
   convert-mochi.mjs  one-shot mochi-house → planner backup converter
+  shots.mjs          dev-only screenshot harness (seeds its own IndexedDB)
 ```
 
 ## Invariants — do not break these
@@ -79,6 +115,11 @@ scripts/
 - **Ledger is append-only** and the only source of truth for points. No
   balance column anywhere. Undo = a second row with negative delta. Deleting
   a completed task reverses its points; deleting habits/projects does NOT.
+- **Points and grit never mix.** The tumbler is a separate economy: no task
+  earns grit, no gem buys a shop item, and neither ledger is ever read by the
+  other side. `tumbler_ledger` follows the same append-only rule — the grit
+  balance AND the upgrade levels are both derived from its rows, because a
+  plain counter synced LWW loses spend when two devices are offline.
 - **Milestones are worth 0 points** (anti-point-farming, deliberate).
 - **Purchases blocked when cost > balance**; only `adjust` may go negative.
 - **`day` is a local YYYY-MM-DD string** computed by `logicalDay()` with a
@@ -90,6 +131,10 @@ scripts/
 - **Theming: tokens only.** No literal colors/shadows/radii/fonts in
   component CSS — everything through `var(--...)` from `_tokens.css`, themed
   in `paper.css`/`mono.css`. The mono theme exists to prove the contract.
+- **`--accent-N` is a pale pastel and is NOT readable as text.** Anything that
+  paints an accent AS a glyph or letters uses `--accent-N-ink`; anything that
+  puts ink ON an accent fill (the checkbox tick) uses `--on-accent`. Painting
+  a rainbow into text takes `--gradient-rainbow-ink`, not the pastel sweep.
 - **Gradients are decoration, never meaning.** The `--gradient-*` and
   awning/shelf tokens exist so Mono can collapse them all to flat ink; if a
   screen stops making sense under Mono, something meaningful was hiding in
@@ -102,16 +147,24 @@ scripts/
   end), not today's count — imports must backdate habit `created_at`.
 - **No recurring tasks, no task↔project links, no login, no due dates** —
   deliberate v1 non-goals; don't add hooks for them.
+- **Editing is a long press, never a visible control.** Shop boxes, task rows,
+  habit rows and shelf gems all use `useLongPress`; a primary action inside a
+  long-press target (checkbox, price tag) must `stopPropagation` on
+  `pointerdown` or a hold will fire both. Each such screen carries one quiet
+  `.longpress-hint` line, which is the whole discoverability budget.
 - Schema changes: update BOTH `server/schema.sql` (+ `ensureColumn`
   migration + `TABLES` column list in `server/index.js`) and note that Dexie
-  needs no version bump for unindexed fields.
+  needs no version bump for unindexed fields — but DOES need one for a new
+  object store (that's what `db.version(2)` is).
 
 ## Conventions & taste
 
 - Colors: tasks/habits/projects have `color` = accent index `'1'`–`'6'` as a
   string, NULL = auto (rotating rainbow by list position via `itemAccent`).
-  The six pastel accents are the identity of the Paper theme; rainbow as an
-  accent system, not a background.
+  The six bright pastels are the identity of the Paper theme; rainbow as an
+  accent system, not a background. The page is a faintly cool off-white — it
+  was warm cream through v1 and the whole app read as sepia; do not drift it
+  back toward yellow.
 - Motion (confetti, floating +N points, checkbox overshoot, the rainbow tap
   ripple) is in `fx.js`, always behind `prefers-reduced-motion` AND the
   settings toggle (`data-motion` on `<html>`). The tap ripple is one
@@ -124,19 +177,53 @@ scripts/
   changes (chromium at 390×844 for phone, ~1180×820 for iPad).
 - The sync status dot was removed on request (status text lives in
   Settings). Don't reintroduce ambient indicators without asking.
+- The Home greeting's second line must come from real data or not appear at
+  all — `greeting.js` returns null rather than inventing encouragement. A
+  generic line you stop reading after a week is worse than a blank row.
+
+## The tumbler (the idle game)
+
+Load a barrel, walk away, come back to a stone. The rules that keep it from
+becoming another chore, in priority order: nothing expires, nothing decays, a
+finished barrel waits forever, and the only thing real time buys is better
+odds. If a change would create a reason to feel late, it's the wrong change.
+
+- **A barrel's outcome is decided at LOAD time**, stashed on the row, and only
+  revealed when opened. Not rolled on open — that way syncing a finished
+  barrel to another device yields the same stone and there is no way to reroll
+  a bad result by collecting it somewhere else.
+- **Barrel state is pure arithmetic** on `started_at + duration_ms`. There is
+  no tick to miss, so any amount of time with the app closed is correct.
+- **The collection log is separate from the shelf.** A discovery is recorded by
+  the `gems` row existing — tombstones included — so crushing a stone can never
+  cost you a square. That's what makes crushing a duplicate a free decision.
+- Balance knobs all live in `tumbler/gems.js` (`CYCLES`, `rollGrade`,
+  `rollSpecies`, `GRADES[].grit`) and `db/tumbler.js` (`UPGRADES`).
+- Gem identity (species/grade/name) is STORED on the row; only the drawing is
+  derived from the seed. Retuning the facet maths redraws old gems but can
+  never re-grade them.
+- `color-mix()` with a percentage outside 0–100 is invalid, and an invalid fill
+  on an SVG polygon renders BLACK. That showed up as one random black facet on
+  high-grade stones — every ratio goes through `mix()` in `gems.js` now.
 
 ## Known state / open threads
 
-- Wordmark is placeholder "Binder"; name undecided (§12 of spec).
+- Named "Planner" as of this branch (wordmark, title, PWA manifest). Still a
+  plain descriptive name rather than the one from §12 if he ever picks one.
+- The tumbler's numbers are a first pass, tuned by reasoning rather than by
+  play. Expect Oskar to want the early game faster or the upgrades cheaper
+  once he's lived with it for a week.
 - Home habits calendar shows the calendar month; a rolling ~5-week window
   was floated as an alternative if early-month emptiness annoys.
-- Phone Home is one card per row (habits → tasks → studio → inventory), and
+- Phone Home is one card per row (habits → tasks → studio → rocks →
+  inventory), and
   the habits card splits calendar-left / today's-rows-right below 700px. In
   the ≥700px three-across grid the card is too narrow to split, so the list
   drops back under the calendar.
-- The store's awning + shelf cabinet is ported from mochi house, recolored
-  into paper's cream-and-pastel tokens (the original warm-wood browns fought
-  the page color). Boxes per shelf is a real number from a matchMedia hook,
+- The store's awning + shelf cabinet is ported from mochi house. Its tokens
+  have now been recolored twice: warm-wood brown → cream → the current cool
+  lilac-grey, each time because the furniture fought the page color. The
+  tumbler's shelf reuses the same furniture on purpose. Boxes per shelf is a real number from a matchMedia hook,
   not CSS auto-fill — each shelf draws its own plank, so the planks have to
   line up with actual rows.
 - `-webkit-line-clamp` needs a non-positioned element: absolute positioning

@@ -38,6 +38,21 @@
   --accent-4-soft: #c8c8c8;
   --accent-5-soft: #c0c0c0;
   --accent-6-soft: #b8b8b8;
+  /* Deep versions of each accent. --accent-N may be a pale pastel in a given
+     theme, so it is NOT safe as a text or glyph color on a light surface —
+     use the -ink variant anywhere the accent has to be *read* rather than
+     just seen. */
+  --accent-1-ink: #4a4a4a;
+  --accent-2-ink: #454545;
+  --accent-3-ink: #404040;
+  --accent-4-ink: #3b3b3b;
+  --accent-5-ink: #363636;
+  --accent-6-ink: #313131;
+
+  /* Ink laid ON TOP of a full --accent-N fill (the checkbox tick). A theme
+     with dark accents sets this white; a pastel theme sets it near-black.
+     Never assume --text-inverse works here. */
+  --on-accent: #ffffff;
 
   /* semantic */
   --color-success: #3f7d47;
@@ -89,6 +104,13 @@
     var(--accent-1-soft), var(--accent-2-soft), var(--accent-3-soft),
     var(--accent-4-soft), var(--accent-5-soft), var(--accent-6-soft)
   );
+  /* Same sweep in the -ink accents. Needed wherever a rainbow is painted into
+     TEXT (background-clip: text) — the pastel sweep is unreadable as letters. */
+  --gradient-rainbow-ink: linear-gradient(
+    90deg,
+    var(--accent-1-ink), var(--accent-2-ink), var(--accent-3-ink),
+    var(--accent-4-ink), var(--accent-5-ink), var(--accent-6-ink)
+  );
   --gradient-page-glow: none;   /* bloom behind the top of the page */
   --gradient-card-wash: none;   /* diagonal tint across a card */
   --gradient-primary: none;     /* .btn.primary fill */
@@ -116,6 +138,12 @@
   --shelf-plank: linear-gradient(180deg, #fafafa 0 4px, #d2d2d2 4px);
   --shelf-plank-shadow: 0 5px 9px rgba(0, 0, 0, 0.14);
   --shelf-ink: var(--text-secondary);
+
+  /* gems: facet edges and the flecks trapped in a low-grade stone. The fills
+     come from the accent tokens via color-mix, so these two are all a theme
+     has to say about them. */
+  --gem-edge: rgba(0, 0, 0, 0.35);
+  --gem-inclusion: rgba(0, 0, 0, 0.2);
 
   /* type */
   --font-display: system-ui, sans-serif;

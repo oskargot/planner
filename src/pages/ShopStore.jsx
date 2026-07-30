@@ -6,6 +6,7 @@ import { useBalance } from '../db/selectors.js';
 import { confettiBurst } from '../fx.js';
 import Icon from '../components/Icon.jsx';
 import { itemAccent } from '../components/ColorPicker.jsx';
+import useLongPress from '../useLongPress.js';
 
 // How many boxes fit on one shelf. This has to be a real number rather than a
 // CSS auto-fill, because each shelf renders its own plank underneath — the
@@ -88,9 +89,16 @@ export default function ShopStore() {
       </div>
 
       {!editing && (
-        <button className="btn" style={{ marginTop: 'var(--space-4)' }} onClick={() => setEditing('new')}>
-          <Icon name="plus" size={16} /> Add item
-        </button>
+        <div className="row spread" style={{ marginTop: 'var(--space-4)' }}>
+          <button className="btn" onClick={() => setEditing('new')}>
+            <Icon name="plus" size={16} /> Add item
+          </button>
+          {items.length > 0 && (
+            <span className="longpress-hint">
+              <Icon name="pencil" size={12} /> hold an item to edit
+            </span>
+          )}
+        </div>
       )}
     </>
   );
@@ -100,6 +108,7 @@ function ShopItem({ item, accent, balance, onEdit }) {
   const soldOut = !!item.sold_out;
   const affordable = balance >= item.cost;
   const cls = soldOut ? ' soldout' : affordable ? '' : ' unaffordable';
+  const { handlers, holding } = useLongPress(onEdit);
 
   async function buy(e) {
     const btn = e.currentTarget;
@@ -119,7 +128,15 @@ function ShopItem({ item, accent, balance, onEdit }) {
   );
 
   return (
-    <div className={`box${cls}`} style={{ '--box-accent': `var(--accent-${accent})`, '--box-accent-soft': `var(--accent-${accent}-soft)` }}>
+    <div
+      className={`box longpress${holding ? ' holding' : ''}${cls}`}
+      style={{
+        '--box-accent': `var(--accent-${accent})`,
+        '--box-accent-soft': `var(--accent-${accent}-soft)`,
+        '--box-accent-ink': `var(--accent-${accent}-ink)`,
+      }}
+      {...handlers}
+    >
       <div className="box-art">
         {item.image_url ? (
           <img src={item.image_url} alt="" loading="lazy" />
@@ -134,7 +151,15 @@ function ShopItem({ item, accent, balance, onEdit }) {
         {soldOut || !affordable ? (
           <span className="price-tag cant">{price}</span>
         ) : (
-          <button className="price-tag" onClick={buy} aria-label={`Buy ${item.name} for ${item.cost} points`}>
+          <button
+            className="price-tag"
+            onClick={buy}
+            /* The whole box is a long-press target; without this, holding the
+               price tag would open the editor and then still fire the buy on
+               release. */
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label={`Buy ${item.name} for ${item.cost} points`}
+          >
             {price}
           </button>
         )}
@@ -145,14 +170,12 @@ function ShopItem({ item, accent, balance, onEdit }) {
         </div>
       </div>
 
-      {/* Pencil first, so each foot visibly belongs to the box above it rather
-          than reading as a divider between two of them. */}
+      {/* The per-box pencil used to live here. Twelve of them across three
+          shelves was more edit affordance than shop — editing is a long-press
+          on the box now, and the foot is just the note. */}
       <div className="box-foot">
-        <button className="box-edit" onClick={onEdit} aria-label={`Edit ${item.name}`}>
-          <Icon name="pencil" size={12} />
-        </button>
         {/* One line only, and the shortfall outranks the note — the full note
-            is a tap away in the edit sheet. */}
+            is a hold away in the edit sheet. */}
         <div className="box-note" title={item.notes || undefined}>
           {!soldOut && !affordable ? `${item.cost - balance} more` : item.notes}
         </div>

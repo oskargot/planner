@@ -1,7 +1,8 @@
-# Binder (name TBD)
+# Planner
 
 A personal planner: tasks, habits, and project tracking with a points economy
-that pays out into a personal shop. Local-first PWA — every read and write hits
+that pays out into a personal shop, plus an idle rock tumbler that runs on a
+currency of its own. Local-first PWA — every read and write hits
 IndexedDB first; a small sync server on jellybot is the merge point and backup
 target, never a dependency. If the server is down the app works fully and
 syncs when it comes back.
@@ -15,28 +16,38 @@ Full spec: see the handoff document. Short version of the rules:
 - Days roll over at 04:00 (configurable). Habits/touches can be backfilled 2
   days; older days are read-only.
 - No accounts, no auth — the tailnet is the boundary.
+- The tumbler is a separate economy. Barrels finish in real time, the outcome
+  is fixed when a barrel is loaded, and grit never converts to or from points.
 
 ## Layout
 
 ```
 src/
   config.js        nav config (add a page = add an entry) + app name
+  greeting.js      the Home hello + its data-drawn second line
+  useLongPress.js  hold-to-edit, used everywhere editing is possible
   db/
     time.js        logicalDay() and ALL date math
     db.js          Dexie schema, row helpers, meta
-    actions.js     every mutation + the ledger rules
-    selectors.js   balance, heat-map stats, staleness
+    actions.js     every points mutation + the ledger rules
+    tumbler.js     every grit mutation; barrels, gems, upgrades
+    selectors.js   balance, heat-map stats, staleness, greeting state
     sync.js        push/pull loop, status
     backup.js      JSON export/import (fully client-side)
   themes/
     _tokens.css    the token contract — every visual value in the app
     paper.css      default skin
     mono.css       minimal proof-of-tokens skin
+  tumbler/
+    gems.js        species, grades, odds and geometry (pure)
+    Gem.jsx        SVG renderer
   pages/           one file per screen
 server/
   index.js         Hono + better-sqlite3, GET/POST /api/sync, serves dist/
   schema.sql       SQLite schema
   backup.sh        nightly .backup rotation (30 dailies)
+scripts/
+  shots.mjs        dev-only screenshot harness (seeds its own IndexedDB)
 ```
 
 ## Development

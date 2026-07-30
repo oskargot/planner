@@ -18,6 +18,14 @@ db.version(1).stores({
   meta: 'key',
 });
 
+// v2 adds the tumbler (§ the rock shop). New object stores need a version
+// bump — only new *unindexed fields* on an existing store don't.
+db.version(2).stores({
+  tumbler_barrels: 'id, updated_at, slot',
+  gems: 'id, updated_at, created_at, species',
+  tumbler_ledger: 'id, updated_at, created_at',
+});
+
 // Tables that participate in sync (meta is handled specially — only
 // day_rollover_hour syncs; sync_cursor/theme/motion stay local).
 export const SYNC_TABLES = [
@@ -30,6 +38,9 @@ export const SYNC_TABLES = [
   'shop_items',
   'purchases',
   'ledger',
+  'tumbler_barrels',
+  'gems',
+  'tumbler_ledger',
 ];
 
 export const SYNCED_META_KEYS = ['day_rollover_hour'];

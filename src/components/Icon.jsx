@@ -144,6 +144,32 @@ const ICONS = {
     </>
   ),
   square: <rect x="4.4" y="4.4" width="15.2" height="15.2" rx="3.4" />,
+  trash: (
+    <>
+      <path d="M4.6 6.7h14.8" />
+      <path d="M9.6 6.7V4.9a1 1 0 0 1 1-1h2.8a1 1 0 0 1 1 1v1.8" />
+      <path d="M6.6 6.7l.9 12.1a1.4 1.4 0 0 0 1.4 1.3h6.2a1.4 1.4 0 0 0 1.4-1.3l.9-12.1" />
+      <path d="M10.4 10.4v6M13.6 10.4v6" />
+    </>
+  ),
+  // ---- the tumbler ----
+  // A faceted stone: crown table, girdle, pavilion. Reads at 22px in the nav
+  // and at 34px on an empty barrel.
+  gem: (
+    <>
+      <path d="M7.6 3.9h8.8l3.8 5.1L12 20.4 3.8 9z" />
+      <path d="M3.8 9h16.4" />
+      <path d="M7.6 3.9 9.6 9l2.4 11.4L14.4 9l2-5.1" />
+    </>
+  ),
+  // A barrel on its side — the tumbler itself.
+  barrel: (
+    <>
+      <rect x="3.4" y="6.6" width="17.2" height="10.8" rx="3.2" />
+      <ellipse cx="7.4" cy="12" rx="1.9" ry="5.4" />
+      <path d="M12 6.6v10.8M16.4 6.6v10.8" />
+    </>
+  ),
   alert: (
     <>
       <path d="M10.4 4.1 2.6 17.4a1.85 1.85 0 0 0 1.6 2.8h15.6a1.85 1.85 0 0 0 1.6-2.8L13.6 4.1a1.85 1.85 0 0 0-3.2 0Z" />
