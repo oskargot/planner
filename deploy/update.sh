@@ -29,7 +29,14 @@
 
 set -euo pipefail
 
-APP_DIR="${PLANNER_DIR:-/srv/planner}"
+# Default to the checkout this script lives in, rather than a hardcoded path.
+# The script is at <repo>/deploy/update.sh, so the repo is one level up — which
+# means it works wherever the checkout happens to be, and there is no path to
+# get wrong in two places. PLANNER_DIR still overrides for odd setups.
+# readlink -f first, so symlinking this onto your PATH still finds the repo
+# rather than resolving to wherever the symlink lives.
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"
+APP_DIR="${PLANNER_DIR:-$(cd "$(dirname "$SELF")/.." && pwd)}"
 KEEP_RELEASES="${PLANNER_KEEP:-5}"
 BRANCH="${PLANNER_BRANCH:-main}"
 STATE="$APP_DIR/.deploy-state"
@@ -43,8 +50,8 @@ cd "$APP_DIR" || die "no such directory: $APP_DIR"
 if [[ "${1:-}" == "--rollback" ]]; then
   target="${2:-}"
   if [[ -z "$target" ]]; then
+    [[ -d releases ]] || die "no releases directory — nothing has been deployed here yet"
     log "available releases (newest last):"
-    [[ -d releases ]] || die "no releases directory"
     live="$(readlink dist || true)"
     for r in $(ls -1tr releases); do
       src="$(sed -n 's/.*"source_sha":"\([0-9a-f]\{12\}\).*/\1/p' "releases/$r/build-info.json" 2>/dev/null)"

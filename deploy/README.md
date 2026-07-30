@@ -27,8 +27,13 @@ exactly why deploying by hand was something to put off.
 
 ## One-time setup
 
-Everything below runs on jellybot. Adjust `/srv/planner` and `oskar` in the
-unit file if your checkout lives elsewhere.
+Everything below runs on jellybot. The checkout is assumed to be at
+`~/projects/planner`; step 4 derives the real path and user from your
+environment, so nothing here needs hand-editing.
+
+`update.sh` locates the checkout from its own path (`<repo>/deploy/update.sh`),
+so it works wherever the repo lives. `PLANNER_DIR` overrides it if you ever
+need to.
 
 ### 1. Move the existing `dist/` into the release layout
 
@@ -36,8 +41,7 @@ The updater expects `dist` to be a symlink into `releases/<sha>`. Converting a
 checkout that's been deploying by hand:
 
 ```bash
-cd /srv/planner
-mkdir -p releases
+cd ~/projects/planner
 rm -rf dist                      # it gets replaced on the first run anyway
 ```
 
@@ -50,8 +54,10 @@ The timer runs non-interactively, so a passphrase prompt or a credential
 helper that wants a UI will hang the unit until it times out. Check with:
 
 ```bash
-sudo -u oskar -H git -C /srv/planner fetch --dry-run origin
+cd ~/projects/planner && git fetch --dry-run origin
 ```
+
+(No `sudo -u` needed — run it as the user the timer will run as, which is you.)
 
 If that asks for anything, set up a credential that doesn't. Either a
 passphrase-less **deploy key** (read-only, repo-scoped — the better option) or
@@ -64,25 +70,40 @@ The updater runs as your user, not root, so give it exactly the one command it
 needs and nothing more:
 
 ```bash
-echo 'oskar ALL=(root) NOPASSWD: /bin/systemctl restart planner' \
+echo "$(whoami) ALL=(root) NOPASSWD: $(command -v systemctl) restart planner" \
   | sudo tee /etc/sudoers.d/planner-update
 sudo chmod 440 /etc/sudoers.d/planner-update
+sudo -n systemctl restart planner && echo "sudoers rule works"
 ```
+
+`command -v systemctl` rather than a hardcoded `/bin/systemctl`: sudoers
+matches on the exact path, so a guess that's off by a symlink silently fails.
 
 ### 4. Install the units
 
+Patch the copies in `/etc`, **not** the ones in the repo. Editing tracked
+files on jellybot leaves the working tree dirty, and the updater's
+`git merge --ff-only` will refuse the next time those files change upstream.
+
 ```bash
-chmod +x /srv/planner/deploy/update.sh
-sudo cp /srv/planner/deploy/planner-update.{service,timer} /etc/systemd/system/
+cd ~/projects/planner
+chmod +x deploy/update.sh
+sudo cp deploy/planner-update.{service,timer} /etc/systemd/system/
+sudo sed -i "s#/home/oskar/projects/planner#$PWD#g; s#User=oskar#User=$(whoami)#; s#HOME=/home/oskar#HOME=$HOME#" \
+  /etc/systemd/system/planner-update.service
 sudo systemctl daemon-reload
+systemctl cat planner-update.service | grep -E 'User|WorkingDirectory|ExecStart|HOME'
 ```
+
+That last line echoes back the paths it will actually use — check them before
+enabling anything.
 
 ### 5. First run, by hand, watching it
 
 Don't enable the timer until one manual run has worked:
 
 ```bash
-/srv/planner/deploy/update.sh
+cd ~/projects/planner && ./deploy/update.sh
 ```
 
 Expect it to report the build it deployed. Then:
@@ -113,8 +134,8 @@ all. Five minutes of silence in the journal means it's working.
 The last five unpacked builds stay on disk:
 
 ```bash
-/srv/planner/deploy/update.sh --rollback              # list them
-/srv/planner/deploy/update.sh --rollback a1b2c3d4e5f6 # relink and restart
+~/projects/planner/deploy/update.sh --rollback              # list them
+~/projects/planner/deploy/update.sh --rollback b8319b7c9966 # relink and restart
 ```
 
 Note that the next timer tick will roll you straight back forward, since the

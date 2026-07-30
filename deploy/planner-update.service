@@ -6,9 +6,14 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
+
+# systemd does not expand $HOME or shell substitutions in these three, so they
+# have to be literal absolute paths. They match jellybot's layout; the install
+# step in deploy/README.md rewrites them from the environment, so a checkout
+# somewhere else is one sed away rather than a file to hand-edit.
 User=oskar
-WorkingDirectory=/srv/planner
-ExecStart=/srv/planner/deploy/update.sh
+WorkingDirectory=/home/oskar/projects/planner
+ExecStart=/home/oskar/projects/planner/deploy/update.sh
 
 # The whole run is a fetch, a tar and a symlink rename. If it hasn't finished
 # in five minutes something is wedged (a hung fetch, most likely) and the next
