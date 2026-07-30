@@ -26,10 +26,25 @@ works well for screenshots).
 
 ## Deploying (jellybot)
 
-- Client change: `git pull && npm run build` on jellybot — that's it. The
-  server serves `dist/` from disk; cache headers make devices pick it up on
-  next load. Never re-introduce uncached `index.html`/`sw.js` (Safari will
-  freeze users on stale builds — this bit us once already).
+- Client change: on jellybot, **from `main`** — `git checkout main && git pull
+  origin main && npm run build`. The server serves `dist/` from disk; cache
+  headers make devices pick it up on next load. Never re-introduce uncached
+  `index.html`/`sw.js` (Safari will freeze users on stale builds — this bit us
+  once already).
+- **A bare `git pull` is not enough if the clone is on an old working branch.**
+  Those branches stop moving once their PR merges, so the pull says "Already up
+  to date" and the rebuild silently reproduces the old bundle. This has already
+  cost an afternoon once. To tell a stale deploy from a stale browser:
+
+  ```bash
+  git rev-parse --abbrev-ref HEAD                        # should be main
+  ls dist/assets/ | grep -E '^index-.*\.(js|css)$'       # content hashes
+  curl -s localhost:8790/ | grep -o '/assets/index-[^"]*'  # what's being served
+  ```
+
+  Matching hashes on disk and over HTTP means the deploy is fine and it's the
+  installed PWA holding the old shell — swipe it fully closed rather than
+  pull-to-refresh.
 - Server change: also `sudo systemctl restart planner` (systemd unit runs
   `node server/index.js`; exposed via `tailscale serve --bg 8790`).
 - Builds are slow on jellybot's AMD E-350; building elsewhere and copying
@@ -39,15 +54,22 @@ works well for screenshots).
 
 ## Git
 
-`main` is what Oskar pulls on jellybot, and it's kept fast-forwarded to
-whatever the current working branch is after each push. Current branch is
-`claude/iphone-planner-redesign-p6fw8r` (the iPhone pass); the v1 branch was
-`claude/oskar-planner-v1-wqpzus`. Both pushes every time:
+`main` is the trunk and the branch jellybot deploys from. Work happens on a
+`claude/*` branch, opens a PR into `main`, and lands by merging that PR — which
+is what moves `main`. Don't push a working branch straight to `main`; the old
+"push to both refs every time" habit is what left `main` and the working branch
+out of sync in the first place.
+
+Once a branch's PR is merged it is finished — it never moves again. Follow-up
+work restarts from the trunk rather than stacking on merged history:
 
 ```bash
-git push -u origin claude/iphone-planner-redesign-p6fw8r
-git push origin claude/iphone-planner-redesign-p6fw8r:main
+git fetch origin main
+git checkout -B claude/<same-branch-name> origin/main
 ```
+
+Branch history: `claude/oskar-planner-v1-wqpzus` (v1),
+`claude/iphone-planner-redesign-p6fw8r` (the iPhone pass, merged as PR #1).
 
 ## Architecture map
 
