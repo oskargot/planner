@@ -7,6 +7,7 @@ import { logicalDay } from '../db/time.js';
 import { staleness } from '../db/selectors.js';
 import { floatPoints } from '../fx.js';
 import ColorPicker from '../components/ColorPicker.jsx';
+import Icon from '../components/Icon.jsx';
 
 export default function Studio() {
   const projects = useLiveQuery(
@@ -86,7 +87,13 @@ export function ProjectCard({ project }) {
         style={{ marginTop: 'var(--space-2)' }}
         onClick={toggleTouch}
       >
-        {touchedToday ? '✓ Worked on it today' : 'Worked on it today?'}
+        {touchedToday ? (
+          <>
+            <Icon name="check" size={15} strokeWidth={2.4} /> Worked on it today
+          </>
+        ) : (
+          'Worked on it today?'
+        )}
       </button>
     </div>
   );

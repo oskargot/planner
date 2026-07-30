@@ -69,10 +69,59 @@
   --texture-page: none;
   --texture-card: none;
 
+  /* decorative gradients. These are DECORATION, not accents: nothing that
+     carries meaning may live only in a gradient. A flat theme is allowed to
+     collapse any of them to a single color or none, so every place that uses
+     one must still read correctly when it does. */
+  --gradient-rainbow: linear-gradient(
+    90deg,
+    var(--accent-1) 0 16.667%, var(--accent-2) 16.667% 33.333%,
+    var(--accent-3) 33.333% 50%, var(--accent-4) 50% 66.667%,
+    var(--accent-5) 66.667% 83.333%, var(--accent-6) 83.333% 100%
+  );
+  --gradient-rainbow-smooth: linear-gradient(
+    90deg,
+    var(--accent-1), var(--accent-2), var(--accent-3),
+    var(--accent-4), var(--accent-5), var(--accent-6)
+  );
+  --gradient-rainbow-soft: linear-gradient(
+    90deg,
+    var(--accent-1-soft), var(--accent-2-soft), var(--accent-3-soft),
+    var(--accent-4-soft), var(--accent-5-soft), var(--accent-6-soft)
+  );
+  --gradient-page-glow: none;   /* bloom behind the top of the page */
+  --gradient-card-wash: none;   /* diagonal tint across a card */
+  --gradient-primary: none;     /* .btn.primary fill */
+  --gradient-ripple: conic-gradient(
+    from 0deg,
+    var(--accent-1), var(--accent-2), var(--accent-3),
+    var(--accent-4), var(--accent-5), var(--accent-6), var(--accent-1)
+  );
+
+  /* store furniture: the awning and the shelf cabinet (§ store decoration).
+     Grouped here because they're the one place in the app with real
+     "material" — a themeless app would set them all flat. */
+  --awning-stripe: var(--gradient-rainbow);
+  --awning-stripe-size: 168px 100%; /* six 28px bands; the scallop period is 28px */
+  --awning-rail: linear-gradient(180deg, #ffffff, #e0e0e0);
+  --awning-ink: #ffffff;
+  --awning-ink-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --awning-shadow: 0 8px 16px rgba(0, 0, 0, 0.14), inset 0 3px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.12);
+  --shelf-frame: linear-gradient(180deg, #f0f0f0, #e4e4e4);
+  --shelf-frame-border: rgba(0, 0, 0, 0.16);
+  --shelf-frame-shadow: var(--shadow-sm);
+  --shelf-back: linear-gradient(180deg, #dcdcdc, #e6e6e6);
+  --shelf-back-inset: inset 0 6px 14px rgba(0, 0, 0, 0.14);
+  --shelf-plank: linear-gradient(180deg, #fafafa 0 4px, #d2d2d2 4px);
+  --shelf-plank-shadow: 0 5px 9px rgba(0, 0, 0, 0.14);
+  --shelf-ink: var(--text-secondary);
+
   /* type */
   --font-display: system-ui, sans-serif;
   --font-body: system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --size-2xs: 0.625rem;  /* only for the mini-month's day numbers */
   --size-xs: 0.75rem;
   --size-sm: 0.875rem;
   --size-md: 1rem;

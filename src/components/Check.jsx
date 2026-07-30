@@ -1,3 +1,5 @@
+import Icon from './Icon.jsx';
+
 // Checkbox with overshoot pop. Accent is a rainbow index (1–6) or undefined
 // for the semantic success color.
 export default function Check({ on, onClick, accent, round = false, disabled = false, label }) {
@@ -13,7 +15,7 @@ export default function Check({ on, onClick, accent, round = false, disabled = f
       aria-checked={on}
       aria-label={label}
     >
-      {on ? '✓' : ''}
+      {on && <Icon name="check" size={16} strokeWidth={3} />}
     </button>
   );
 }

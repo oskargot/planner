@@ -14,6 +14,7 @@ import { floatPoints, confettiBurst } from '../fx.js';
 import { APP_NAME } from '../config.js';
 import Card from '../components/Card.jsx';
 import Check from '../components/Check.jsx';
+import Icon from '../components/Icon.jsx';
 import { itemAccent } from '../components/ColorPicker.jsx';
 import { SizeChip } from './Tasks.jsx';
 
@@ -24,19 +25,21 @@ export default function Home() {
   return (
     <>
       <header className="row spread home-header">
-        <h1 className="display" style={{ fontSize: 'var(--size-2xl)' }}>
-          {APP_NAME}
-        </h1>
+        <h1 className="display wordmark">{APP_NAME}</h1>
         <div className="row" style={{ gap: 'var(--space-3)' }}>
           <Link to="/shop/ledger" className="header-points" aria-label="Points">
-            <div className="balance">✦ {balance ?? '…'}</div>
+            <div className="balance">
+              <Icon name="spark" size={18} /> {balance ?? '…'}
+            </div>
             <div className="muted small">+{earned} today</div>
           </Link>
           <Link to="/settings" className="settings-btn" aria-label="Settings">
-            ⚙︎
+            <Icon name="gear" size={24} />
           </Link>
         </div>
       </header>
+      {/* Phone order (§ iPhone pass): habits, then tasks, then studio — one
+          full-width card each, rather than two narrow columns. */}
       <div className="home-grid">
         <HabitsCard />
         <TasksCard />
@@ -47,8 +50,10 @@ export default function Home() {
   );
 }
 
-// "Habits extended": the current month as a proper calendar on top, then
-// today's checkable rows — the list below can grow as long as it likes.
+// "Habits extended": the month calendar sits top-left with today's checkable
+// rows beside it, so the card reads as one glance-and-tap unit. Below 700px
+// they're side by side; in the multi-column grid above that the card is too
+// narrow, so the list drops under the calendar.
 function HabitsCard() {
   const today = logicalDay();
   const habits = useLiveQuery(
@@ -84,52 +89,56 @@ function HabitsCard() {
 
   return (
     <Card title="Habits" accent={3} to="/habits">
-      <Link to="/habits/month" className="mini-month" aria-label="Open month view">
-        <div className="month-label">{monthLabel(year, month)}</div>
-        <div className="heat-grid">
-          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((w, i) => (
-            <div key={`w${i}`} className="muted" style={{ textAlign: 'center', fontSize: 'var(--size-xs)' }}>
-              {w}
+      <div className="habits-split">
+        <Link to="/habits/month" className="mini-month" aria-label="Open month view">
+          <div className="month-label">{monthLabel(year, month)}</div>
+          <div className="heat-grid">
+            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((w, i) => (
+              <div key={`w${i}`} className="heat-weekday">
+                {w}
+              </div>
+            ))}
+            {Array.from({ length: offset }, (_, i) => (
+              <div key={`pad${i}`} className="heat-cell outside" />
+            ))}
+            {days.map((day) => {
+              const future = day > today;
+              const cls = `heat-cell${future ? ' future' : ''}${day === today ? ' today' : ''}`;
+              return (
+                <div
+                  key={day}
+                  className={cls}
+                  title={day}
+                  style={{
+                    background: future
+                      ? undefined
+                      : heatVar(stats?.get(day)?.ratio ?? 0, stats?.get(day)?.done ?? 0),
+                  }}
+                >
+                  {Number(day.slice(-2))}
+                </div>
+              );
+            })}
+          </div>
+        </Link>
+        <div className="habit-minis">
+          {habits.length === 0 && <p className="empty">No habits yet.</p>}
+          {habits.map((h, i) => (
+            <div className="habit-mini" key={h.id}>
+              <Check
+                on={doneIds.has(h.id)}
+                accent={itemAccent(h, i)}
+                round
+                onClick={(e) => toggle(h, e)}
+                label={h.name}
+              />
+              {h.emoji && <span className="habit-mini-emoji">{h.emoji}</span>}
+              <span className={`habit-mini-name${doneIds.has(h.id) ? ' muted' : ''}`}>
+                {h.name}
+              </span>
             </div>
           ))}
-          {Array.from({ length: offset }, (_, i) => (
-            <div key={`pad${i}`} className="heat-cell outside" />
-          ))}
-          {days.map((day) => {
-            const future = day > today;
-            const cls = `heat-cell${future ? ' future' : ''}${day === today ? ' today' : ''}`;
-            return (
-              <div
-                key={day}
-                className={cls}
-                title={day}
-                style={{
-                  background: future
-                    ? undefined
-                    : heatVar(stats?.get(day)?.ratio ?? 0, stats?.get(day)?.done ?? 0),
-                }}
-              >
-                {Number(day.slice(-2))}
-              </div>
-            );
-          })}
         </div>
-      </Link>
-      {habits.length === 0 && <p className="empty">No habits yet.</p>}
-      <div className="stack-sm">
-        {habits.map((h, i) => (
-          <div className="row" key={h.id}>
-            <Check
-              on={doneIds.has(h.id)}
-              accent={itemAccent(h, i)}
-              round
-              onClick={(e) => toggle(h, e)}
-              label={h.name}
-            />
-            <span>{h.emoji}</span>
-            <span className={doneIds.has(h.id) ? 'muted' : ''}>{h.name}</span>
-          </div>
-        ))}
       </div>
     </Card>
   );
@@ -182,10 +191,12 @@ function StudioCard() {
     .slice(0, 4);
 
   return (
-    <Card title="Studio" accent={4} to="/studio" className="wide">
+    <Card title="Studio" accent={4} to="/studio">
       {projects.length === 0 && <p className="empty">No projects yet.</p>}
       {projects.length > 0 && rows.length === 0 && (
-        <p className="empty">Everything touched today. 🌟</p>
+        <p className="empty">
+          <Icon name="sparkles" size={16} /> Everything touched today.
+        </p>
       )}
       <div className="stack-sm">
         {rows.map(({ p, stale }) => (
@@ -218,11 +229,11 @@ function InventoryCard() {
   );
   if (unredeemed.length === 0) return null;
   return (
-    <Card title="Inventory" accent={1} to="/shop/inventory" sticker="📦" className="wide">
+    <Card title="Inventory" accent={1} to="/shop/inventory">
       <div className="stack-sm">
         {unredeemed.map((p) => (
           <div className="row" key={p.id}>
-            <span>📦</span>
+            <Icon name="box" size={18} />
             <span className="grow">{p.name_snapshot}</span>
           </div>
         ))}

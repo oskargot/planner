@@ -22,6 +22,7 @@ window.addEventListener('unhandledrejection', (e) =>
 );
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
+import { initTapRipples } from './fx.js';
 
 import '@fontsource/quicksand/500.css';
 import '@fontsource/quicksand/700.css';
@@ -32,6 +33,8 @@ import './themes/_tokens.css';
 import './themes/paper.css';
 import './themes/mono.css';
 import './styles/base.css';
+
+initTapRipples();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

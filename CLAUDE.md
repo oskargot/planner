@@ -39,13 +39,14 @@ works well for screenshots).
 
 ## Git
 
-Work happens on `claude/oskar-planner-v1-wqpzus`; `main` is kept
-fast-forwarded to it after each push (Oskar pulls `main` on jellybot). Both
-pushes every time:
+`main` is what Oskar pulls on jellybot, and it's kept fast-forwarded to
+whatever the current working branch is after each push. Current branch is
+`claude/iphone-planner-redesign-p6fw8r` (the iPhone pass); the v1 branch was
+`claude/oskar-planner-v1-wqpzus`. Both pushes every time:
 
 ```bash
-git push -u origin claude/oskar-planner-v1-wqpzus
-git push origin claude/oskar-planner-v1-wqpzus:main
+git push -u origin claude/iphone-planner-redesign-p6fw8r
+git push origin claude/iphone-planner-redesign-p6fw8r:main
 ```
 
 ## Architecture map
@@ -62,7 +63,8 @@ src/
     backup.js        client-side JSON export/import (merge, LWW)
   themes/            _tokens.css is the contract; paper (default) + mono
   components/        NavBar (bottom bar <900px, left rail ≥900px), Card,
-                     Check, ColorPicker (itemAccent helper lives here)
+                     Check, ColorPicker (itemAccent helper lives here),
+                     Icon (the whole inline-SVG glyph set)
   pages/             one file per screen
 server/
   index.js           GET/POST /api/sync, LWW upserts, serves dist/, cache
@@ -88,6 +90,14 @@ scripts/
 - **Theming: tokens only.** No literal colors/shadows/radii/fonts in
   component CSS — everything through `var(--...)` from `_tokens.css`, themed
   in `paper.css`/`mono.css`. The mono theme exists to prove the contract.
+- **Gradients are decoration, never meaning.** The `--gradient-*` and
+  awning/shelf tokens exist so Mono can collapse them all to flat ink; if a
+  screen stops making sense under Mono, something meaningful was hiding in
+  decoration. Nothing may be conveyed by a gradient alone.
+- **App chrome uses `Icon.jsx`, not emoji.** Unicode symbols look like five
+  different icon sets on iOS (missing glyphs, mismatched fallback-font
+  metrics) — U+FE0E and `font-variant-emoji` don't fix either. User-supplied
+  emoji (habit `emoji`) is data and stays as-is.
 - **Heat-map ratios** divide by habits active *that day* (created_at ≤ day
   end), not today's count — imports must backdate habit `created_at`.
 - **No recurring tasks, no task↔project links, no login, no due dates** —
@@ -102,9 +112,11 @@ scripts/
   string, NULL = auto (rotating rainbow by list position via `itemAccent`).
   The six pastel accents are the identity of the Paper theme; rainbow as an
   accent system, not a background.
-- Motion (confetti, floating +N points, checkbox overshoot) is in `fx.js`,
-  always behind `prefers-reduced-motion` AND the settings toggle
-  (`data-motion` on `<html>`).
+- Motion (confetti, floating +N points, checkbox overshoot, the rainbow tap
+  ripple) is in `fx.js`, always behind `prefers-reduced-motion` AND the
+  settings toggle (`data-motion` on `<html>`). The tap ripple is one
+  document-level `pointerdown` listener installed from `main.jsx` — global on
+  purpose, so no component has to remember to wire it up.
 - Boot must never white-screen: `App.jsx` races settings-load against a 4s
   fallback and surfaces errors; `main.jsx` has a global error overlay. Keep
   it that way.
@@ -118,6 +130,20 @@ scripts/
 - Wordmark is placeholder "Binder"; name undecided (§12 of spec).
 - Home habits calendar shows the calendar month; a rolling ~5-week window
   was floated as an alternative if early-month emptiness annoys.
+- Phone Home is one card per row (habits → tasks → studio → inventory), and
+  the habits card splits calendar-left / today's-rows-right below 700px. In
+  the ≥700px three-across grid the card is too narrow to split, so the list
+  drops back under the calendar.
+- The store's awning + shelf cabinet is ported from mochi house, recolored
+  into paper's cream-and-pastel tokens (the original warm-wood browns fought
+  the page color). Boxes per shelf is a real number from a matchMedia hook,
+  not CSS auto-fill — each shelf draws its own plank, so the planks have to
+  line up with actual rows.
+- `-webkit-line-clamp` needs a non-positioned element: absolute positioning
+  blockifies `display: -webkit-box` and silently drops the clamp. That's why
+  `.box-name` clamps an inner `<span>`.
+- Oskar picked the rainbow ripple for the tap effect; the sparkle-stars and
+  bubble variants were the runners-up if he wants to swap.
 - Left rail appears at ≥900px, so iPad portrait gets it too; Oskar hasn't
   confirmed whether portrait should keep the bottom bar instead.
 - Oskar's live DB imported before task/habit colors existed, so his rows

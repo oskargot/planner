@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { NAV, matchNav, sectionPath } from '../config.js';
+import Icon from './Icon.jsx';
 
 // Two renderings of the same NAV config, toggled purely by CSS breakpoint:
 // narrow screens get the stacked bottom bar (§6), wide screens get a left
@@ -32,7 +33,9 @@ function BottomBar({ section, child }) {
             className={s.id === section.id ? 'nav-tab active' : 'nav-tab'}
             style={accentVars(s.accent)}
           >
-            <span className="nav-icon" aria-hidden="true">{s.icon}</span>
+            <span className="nav-icon">
+              <Icon name={s.icon} size={22} />
+            </span>
             {s.label}
           </NavLink>
         ))}
@@ -69,7 +72,9 @@ function Rail({ section, child }) {
               to={sectionPath(s)}
               className={active ? 'rail-tab active' : 'rail-tab'}
             >
-              <span className="nav-icon" aria-hidden="true">{s.icon}</span>
+              <span className="nav-icon">
+                <Icon name={s.icon} size={24} />
+              </span>
               <span className="rail-label">{s.label}</span>
             </NavLink>
             {active &&

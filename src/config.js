@@ -4,31 +4,32 @@ export const APP_NAME = 'Binder';
 
 // Nav is a declarative config (§6). Adding a page = adding an entry here
 // plus a route in App.jsx. Each section owns one of the six rainbow accents.
+// `icon` is a name in components/Icon.jsx, not an emoji — see the note there.
 export const NAV = [
-  { id: 'home', label: 'Home', icon: '🏠', path: '/', accent: 1 },
+  { id: 'home', label: 'Home', icon: 'home', path: '/', accent: 1 },
   {
-    id: 'tasks', label: 'Tasks', icon: '📝', accent: 2,
+    id: 'tasks', label: 'Tasks', icon: 'tasks', accent: 2,
     children: [
       { id: 'open', label: 'To Do', path: '/tasks' },
       { id: 'done', label: 'Done', path: '/tasks/done' },
     ],
   },
   {
-    id: 'habits', label: 'Habits', icon: '🔁', accent: 3,
+    id: 'habits', label: 'Habits', icon: 'habits', accent: 3,
     children: [
       { id: 'today', label: 'Today', path: '/habits' },
       { id: 'month', label: 'Month', path: '/habits/month' },
     ],
   },
   {
-    id: 'studio', label: 'Studio', icon: '🎨', accent: 4,
+    id: 'studio', label: 'Studio', icon: 'studio', accent: 4,
     children: [
       { id: 'active', label: 'Active', path: '/studio' },
       { id: 'archived', label: 'Archived', path: '/studio/archived' },
     ],
   },
   {
-    id: 'shop', label: 'Shop', icon: '🎁', accent: 5,
+    id: 'shop', label: 'Shop', icon: 'shop', accent: 5,
     children: [
       { id: 'store', label: 'Store', path: '/shop' },
       { id: 'inventory', label: 'Inventory', path: '/shop/inventory' },

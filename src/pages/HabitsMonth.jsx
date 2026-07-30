@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db.js';
 import { habitDayStats, heatVar } from '../db/selectors.js';
 import { logicalDay, monthLabel, parseDay } from '../db/time.js';
+import Icon from '../components/Icon.jsx';
 
 // The temperature map (§7): one cell per day, fill intensity =
 // habits done / habits active THAT day, riding the theme's heat ramp.
@@ -37,14 +38,18 @@ export default function HabitsMonth() {
       </h1>
 
       <div className="stepper">
-        <button onClick={() => step(-1)} aria-label="Previous month">‹</button>
+        <button onClick={() => step(-1)} aria-label="Previous month">
+          <Icon name="chevronLeft" size={18} />
+        </button>
         <div className="day-label">{monthLabel(ym.y, ym.m)}</div>
-        <button onClick={() => step(1)} aria-label="Next month">›</button>
+        <button onClick={() => step(1)} aria-label="Next month">
+          <Icon name="chevronRight" size={18} />
+        </button>
       </div>
 
       <div className="heat-grid" style={{ marginBottom: 'var(--space-2)' }}>
         {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-          <div key={i} className="muted" style={{ textAlign: 'center' }}>
+          <div key={i} className="heat-weekday">
             {d}
           </div>
         ))}
@@ -93,7 +98,11 @@ function DayDetail({ day, stat }) {
       <div className="stack-sm">
         {shown.map((h) => (
           <div className="row" key={h.id}>
-            <span>{doneIds.has(h.id) ? '✅' : '⬜'}</span>
+            <Icon
+              name={doneIds.has(h.id) ? 'tasks' : 'square'}
+              size={18}
+              style={{ color: doneIds.has(h.id) ? 'var(--color-success)' : 'var(--text-muted)' }}
+            />
             <span>{h.emoji}</span>
             <span className={doneIds.has(h.id) ? '' : 'muted'}>{h.name}</span>
           </div>

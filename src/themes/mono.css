@@ -56,6 +56,32 @@
   --texture-page: none;
   --texture-card: none;
 
+  /* Every gradient collapses. This is the point of the theme: if a screen
+     stops making sense here, something meaningful was hiding in decoration.
+     The rainbow tokens still have to resolve to *something*, so they become
+     flat ink — background-clip:text on a wordmark needs a paint source. */
+  --gradient-rainbow: linear-gradient(90deg, #111111, #111111);
+  --gradient-rainbow-smooth: linear-gradient(90deg, #111111, #111111);
+  --gradient-rainbow-soft: linear-gradient(90deg, #d4d4d4, #d4d4d4);
+  --gradient-page-glow: none;
+  --gradient-card-wash: none;
+  --gradient-primary: none;
+  --gradient-ripple: radial-gradient(circle, #8c8c8c, #8c8c8c);
+
+  --awning-stripe: linear-gradient(90deg, #111111, #111111);
+  --awning-rail: linear-gradient(180deg, #ffffff, #ffffff);
+  --awning-ink: #ffffff;
+  --awning-ink-shadow: none;
+  --awning-shadow: none;
+  --shelf-frame: linear-gradient(180deg, #f5f5f5, #f5f5f5);
+  --shelf-frame-border: #d4d4d4;
+  --shelf-frame-shadow: none;
+  --shelf-back: linear-gradient(180deg, #ffffff, #ffffff);
+  --shelf-back-inset: none;
+  --shelf-plank: linear-gradient(180deg, #d4d4d4, #d4d4d4);
+  --shelf-plank-shadow: none;
+  --shelf-ink: #444444;
+
   --font-display: system-ui, sans-serif;
   --font-body: system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;

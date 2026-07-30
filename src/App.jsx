@@ -4,6 +4,7 @@ import { NAV, matchNav } from './config.js';
 import { loadSettings } from './db/db.js';
 import { startSync } from './db/sync.js';
 import NavBar from './components/NavBar.jsx';
+import Icon from './components/Icon.jsx';
 
 import Home from './pages/Home.jsx';
 import Tasks from './pages/Tasks.jsx';
@@ -65,7 +66,7 @@ export default function App() {
     <div className="app">
       {bootError && (
         <div className="locked-note" role="alert">
-          ⚠️ {bootError}
+          <Icon name="alert" size={16} /> {bootError}
         </div>
       )}
       <main className="page" key={section.id} data-dir={dir}>
