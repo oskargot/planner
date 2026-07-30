@@ -259,6 +259,14 @@ for (const [vpName, viewport, dsf] of VIEWPORTS) {
   await page.screenshot({ path: join(OUT, `${vpName}-palette.png`) });
   await page.keyboard.press('Escape');
 
+  // A task open: the detail pane on a wide screen, the subtask drawer on a
+  // phone. Both are the same click, and neither is reachable by URL.
+  await page.goto(`http://localhost:${PORT}/tasks`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  await page.locator('.list-item').nth(2).click();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: join(OUT, `${vpName}-tasks-open.png`) });
+
   await page.goto(`http://localhost:${PORT}/tasks`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(400);
   await page.locator('.check').first().click();
