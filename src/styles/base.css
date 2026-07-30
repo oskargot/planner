@@ -775,8 +775,8 @@ h1, h2, h3 {
 
 .cabinet {
   /* clears the valance hanging 14px below the awning */
-  margin: var(--space-5) 0 var(--space-4);
-  padding: var(--space-4) var(--space-3) var(--space-1);
+  margin: var(--space-6) 0 var(--space-4);
+  padding: var(--space-5) var(--space-4) var(--space-3);
   border-radius: var(--radius-lg);
   position: relative;
   overflow: hidden;
@@ -789,8 +789,8 @@ h1, h2, h3 {
   box-shadow: var(--shelf-frame-shadow);
 }
 
-.shelf { position: relative; margin-bottom: var(--space-4); }
-.shelf:last-child { margin-bottom: var(--space-2); }
+.shelf { position: relative; margin-bottom: var(--space-6); }
+.shelf:last-child { margin-bottom: var(--space-3); }
 
 /* the recess the boxes sit inside, so each row reads as a real compartment */
 .shelf::before {
@@ -806,14 +806,24 @@ h1, h2, h3 {
   box-shadow: var(--shelf-back-inset);
 }
 
+/* Boxes are capped and centered rather than stretched to fill the row, so the
+   shelf reads as a shelf with things standing on it — a full-width row of
+   boxes left no visible shelf at all. */
 .shelf-items {
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: repeat(var(--per-shelf, 2), minmax(0, 1fr));
-  gap: var(--space-2);
+  grid-template-columns: repeat(var(--per-shelf, 3), minmax(0, var(--box-max, 80px)));
+  justify-content: center;
+  gap: var(--space-4);
   align-items: end;
-  padding: var(--space-3) var(--space-2) 0;
+  padding: var(--space-4) var(--space-3) 0;
+}
+
+/* Wide screens keep four per shelf but get bigger boxes — capping the width
+   for the phone left the iPad shelf looking half-empty. */
+@media (min-width: 700px) {
+  .shelf-items { --box-max: 158px; gap: var(--space-5); }
 }
 
 .plank {
