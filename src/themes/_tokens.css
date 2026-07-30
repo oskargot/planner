@@ -114,10 +114,13 @@
   --gradient-page-glow: none;   /* bloom behind the top of the page */
   --gradient-card-wash: none;   /* diagonal tint across a card */
   --gradient-primary: none;     /* .btn.primary fill */
-  --gradient-ripple: conic-gradient(
-    from 0deg,
-    var(--accent-1), var(--accent-2), var(--accent-3),
-    var(--accent-4), var(--accent-5), var(--accent-6), var(--accent-1)
+  /* Radial, not conic: the ripple is a pair of thin rings, and a radial sweep
+     means each ring's radius decides which band of the rainbow it shows. A
+     conic one gave every ring the whole spectrum smeared around it. */
+  --gradient-ripple: radial-gradient(
+    closest-side,
+    var(--accent-1) 0%, var(--accent-2) 22%, var(--accent-3) 40%,
+    var(--accent-4) 58%, var(--accent-5) 76%, var(--accent-6) 100%
   );
 
   /* store furniture: the awning and the shelf cabinet (§ store decoration).

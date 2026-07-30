@@ -77,7 +77,7 @@
   --gradient-page-glow: none;
   --gradient-card-wash: none;
   --gradient-primary: none;
-  --gradient-ripple: radial-gradient(circle, #8c8c8c, #8c8c8c);
+  --gradient-ripple: radial-gradient(closest-side, #8c8c8c, #8c8c8c);
 
   --awning-stripe: linear-gradient(90deg, #111111, #111111);
   --awning-rail: linear-gradient(180deg, #ffffff, #ffffff);

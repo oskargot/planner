@@ -26,10 +26,16 @@ db.version(2).stores({
   tumbler_ledger: 'id, updated_at, created_at',
 });
 
+// v3 adds subtasks — a checklist inside a task, hidden behind its disclosure.
+db.version(3).stores({
+  subtasks: 'id, updated_at, task_id, sort_order',
+});
+
 // Tables that participate in sync (meta is handled specially — only
 // day_rollover_hour syncs; sync_cursor/theme/motion stay local).
 export const SYNC_TABLES = [
   'tasks',
+  'subtasks',
   'habits',
   'habit_entries',
   'projects',

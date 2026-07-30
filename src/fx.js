@@ -41,14 +41,21 @@ export function initTapRipples() {
       // left click — gets a ring.
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       if (motionOff()) return;
-      const el = document.createElement('div');
-      el.className = 'tap-ripple';
-      el.style.left = `${e.clientX}px`;
-      el.style.top = `${e.clientY}px`;
-      document.body.appendChild(el);
+      // Two thin rings rather than one thick one — the second chases the
+      // first out, which reads far more like a real ripple than a single
+      // expanding band. The delay is CSS; both are created here so they share
+      // an origin exactly.
+      const rings = ['tap-ripple lead', 'tap-ripple chase'].map((cls) => {
+        const el = document.createElement('div');
+        el.className = cls;
+        el.style.left = `${e.clientX}px`;
+        el.style.top = `${e.clientY}px`;
+        document.body.appendChild(el);
+        return el;
+      });
       // Outlive the animation by a hair, then clean up. Nothing here holds a
       // reference, so a torn-down page just drops them.
-      setTimeout(() => el.remove(), 700);
+      setTimeout(() => rings.forEach((el) => el.remove()), 800);
     },
     { passive: true }
   );

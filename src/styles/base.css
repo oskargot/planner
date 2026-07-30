@@ -157,11 +157,16 @@ h1, h2, h3 {
   .app { flex-direction: row; }
   .nav-bottom { display: none; }
 
-  /* Icon column + sub-page column, side by side. */
+  /* The icon column, plus a gutter on its right that the vertical sub-page
+     tabs render into. The gutter is padding rather than a panel: it's always
+     reserved, so the content area never slides sideways between Home and a
+     section with sub-pages, but there's nothing drawn in it when it's empty.
+     52px because a vertical tab is one line-height wide, not one word long. */
   .rail-wrap {
     display: flex;
     order: -1;
     flex-shrink: 0;
+    padding-right: 52px;
     border-right: var(--border-hairline);
     background: var(--bg-surface);
   }
@@ -171,6 +176,9 @@ h1, h2, h3 {
      in the bottom one, ~230px apart, which reads as stretched rather than
      spread. What matters is that these positions never change — and they can't
      now, because sub-pages have their own column. */
+  /* No overflow property here on purpose: the sub-tabs hang outside this box
+     on the right, and any non-visible overflow on one axis forces the other
+     axis to clip too, which would slice them off. */
   .nav-rail {
     display: flex;
     flex-direction: column;
@@ -179,30 +187,41 @@ h1, h2, h3 {
     width: 96px;
     padding: var(--space-4) var(--space-2);
     padding-left: calc(var(--space-2) + env(safe-area-inset-left));
-    overflow-y: auto;
   }
 
-  /* Holds its width whether or not the section has sub-pages, so the content
-     area doesn't slide sideways between Home and everywhere else. */
+  .rail-group { position: relative; }
+
+  /* Out of flow and centred on its parent icon: the sections keep fixed
+     positions whichever one is open, which is the point of the whole layout. */
   .rail-subs {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: var(--space-2);
-    width: 116px;
-    padding: var(--space-4) var(--space-2);
-    border-left: var(--border-hairline);
-    background: var(--bg-surface-alt);
-    overflow-y: auto;
+    gap: var(--space-1);
+    margin-left: var(--space-1);
   }
+}
 
-  /* On Home — the one section with no sub-pages — the panel keeps its width
-     but drops its fill, so it reads as margin rather than as an empty box
-     someone forgot to populate. */
-  .rail-subs.empty {
-    background: none;
-    border-left-color: transparent;
-  }
+/* The phone's sub-row pills, turned a quarter turn along with the bar they
+   live in — stacked down the gutter instead of across the screen, each one
+   reading top to bottom. */
+.rail-subtab {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--size-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.rail-subtab.active {
+  background: var(--tab-accent-soft, var(--bg-sunken));
+  color: var(--text-primary);
 }
 
 .rail-tab {
@@ -225,22 +244,6 @@ h1, h2, h3 {
   color: var(--text-primary);
   background: var(--tab-accent-soft, var(--bg-sunken));
   border-left-color: var(--tab-accent, var(--accent-1));
-}
-
-/* Sized like the phone's sub-row pills rather than like the icon labels —
-   this column is the phone's sub-row, turned on its side. */
-.rail-subtab {
-  text-align: center;
-  font-size: var(--size-sm);
-  font-weight: var(--weight-medium);
-  color: var(--text-secondary);
-  padding: var(--space-2) var(--space-2);
-  border-radius: var(--radius-full);
-}
-
-.rail-subtab.active {
-  background: var(--tab-accent-soft, var(--bg-sunken));
-  color: var(--text-primary);
 }
 
 .nav-row {
@@ -666,6 +669,62 @@ h1, h2, h3 {
 
 .item-title { font-weight: var(--weight-medium); overflow-wrap: anywhere; }
 
+/* ---------- subtasks ---------- */
+
+/* Wraps a row and its drawer so the two move as one item in the list. */
+.task-block + .task-block { margin-top: var(--space-2); }
+
+/* The row loses its bottom rounding while its drawer is open, so the two read
+   as one piece rather than as two stacked cards. */
+.list-item.open {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.subtask-count {
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-size: var(--size-xs);
+  font-weight: var(--weight-bold);
+  color: var(--text-muted);
+}
+
+.disclosure {
+  flex-shrink: 0;
+  display: inline-flex;
+  color: var(--text-muted);
+  transition: transform var(--dur-normal) var(--ease-standard);
+}
+.disclosure.open { transform: rotate(90deg); }
+
+.subtask-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  background: var(--bg-surface-alt);
+  border: var(--border-hairline);
+  border-top: none;
+  /* Inherits the parent row's accent stripe so the drawer stays visibly
+     attached to the task it belongs to. */
+  border-left: 4px solid var(--accent-1);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.subtask-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.subtask-row .check { width: 22px; height: 22px; }
+
+.subtask-done {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
 .size-chip {
   font-family: var(--font-display);
   font-size: var(--size-xs);
@@ -713,9 +772,16 @@ h1, h2, h3 {
 }
 
 /* ---------- tap ripple ----------
- * A rainbow ring blooming out of wherever you touched (fx.js installs one
- * document-level listener). Masked to a ring rather than a filled disc so it
- * never washes out what you just tapped.
+ * Two thin rainbow rings blooming out of wherever you touched, the second
+ * chasing the first (fx.js installs one document-level listener and creates
+ * both). Masked to rings rather than filled discs so they never wash out what
+ * you just tapped.
+ *
+ * The paint is a RADIAL rainbow, so where a ring's mask sits decides which
+ * band of the spectrum it picks up — the two rings come out different colours
+ * from the same gradient, and together they read as two stripes of a rainbow
+ * travelling outward. The masks are deliberately at different radii for that
+ * reason, not just for staggering.
  */
 
 .tap-ripple {
@@ -727,14 +793,27 @@ h1, h2, h3 {
   border-radius: var(--radius-full);
   pointer-events: none;
   background-image: var(--gradient-ripple);
-  -webkit-mask: radial-gradient(closest-side, transparent 56%, #000 62%);
-  mask: radial-gradient(closest-side, transparent 56%, #000 62%);
-  animation: tap-ripple 520ms var(--ease-standard) forwards;
+  animation: tap-ripple 560ms var(--ease-standard) forwards;
+}
+
+/* Outer band of the gradient, and thin — 4% of the element rather than the 6%
+   the single ring used. */
+.tap-ripple.lead {
+  -webkit-mask: radial-gradient(closest-side, transparent 74%, #000 78%, #000 82%, transparent 86%);
+  mask: radial-gradient(closest-side, transparent 74%, #000 78%, #000 82%, transparent 86%);
+}
+
+/* Inner band, started a beat later so it trails the lead ring outward. */
+.tap-ripple.chase {
+  -webkit-mask: radial-gradient(closest-side, transparent 50%, #000 54%, #000 58%, transparent 62%);
+  mask: radial-gradient(closest-side, transparent 50%, #000 54%, #000 58%, transparent 62%);
+  animation-delay: 110ms;
+  opacity: 0;
 }
 
 @keyframes tap-ripple {
-  from { transform: scale(0.45); opacity: 0.85; }
-  to { transform: scale(3.4); opacity: 0; }
+  from { transform: scale(0.45); opacity: 0.9; }
+  to { transform: scale(3.6); opacity: 0; }
 }
 
 /* ---------- heat map ---------- */
