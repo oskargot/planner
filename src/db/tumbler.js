@@ -15,7 +15,7 @@
  */
 
 import { db, insertRow, updateRow, softDelete, uuid } from './db.js';
-import { CYCLES_BY_KEY, rollGem, gritValue } from '../tumbler/gems.js';
+import { CYCLES_BY_KEY, rollGem, gritValue, canFuse, fuseOutcome } from '../tumbler/gems.js';
 
 const HOUR_MS = 3600000;
 
@@ -30,21 +30,21 @@ export const UPGRADES = {
   barrels: {
     name: 'Another barrel',
     blurb: 'One more stone tumbling at a time.',
-    costs: [120, 400, 900],
+    costs: [90, 300, 700],
     base: 2,
     max: 3,
   },
   speed: {
     name: 'Better grit feed',
     blurb: 'Every cycle finishes sooner.',
-    costs: [60, 140, 260, 460, 720],
+    costs: [45, 110, 210, 380, 600],
     base: 0,
     max: 5,
   },
   quality: {
     name: 'Finer polish',
     blurb: 'Better stones, and rare ones turn up more often.',
-    costs: [80, 180, 340, 560, 850],
+    costs: [60, 140, 270, 450, 700],
     base: 0,
     max: 5,
   },
@@ -52,11 +52,12 @@ export const UPGRADES = {
 
 export const BARREL_MAX = UPGRADES.barrels.base + UPGRADES.barrels.max;
 
-// Each speed level takes 8% off every cycle; five levels is a 40% cut, which
-// turns the overnight cycle into something you can start after breakfast.
+// Each speed level takes 10% off every cycle; five levels is half, which turns
+// the overnight cycle into an afternoon. Was 8% — the whole early game came
+// out slower in practice than it read on paper.
 export function cycleDuration(cycleKey, speedLevel) {
   const cycle = CYCLES_BY_KEY[cycleKey] ?? CYCLES_BY_KEY.quick;
-  return Math.round(cycle.hours * HOUR_MS * (1 - 0.08 * speedLevel));
+  return Math.round(cycle.hours * HOUR_MS * (1 - 0.1 * speedLevel));
 }
 
 export function upgradeCost(key, level) {
@@ -194,6 +195,54 @@ export async function crushGem(gem) {
     note: `${fresh.species}:${fresh.grade}`,
   });
   return value;
+}
+
+/*
+ * Fuse three stones into one better one.
+ *
+ * The inputs are tombstoned, not erased — which is the whole reason this is
+ * safe to do with something you like. The collection log reads every gem row
+ * that has ever existed, tombstones included, so a stone you fused away keeps
+ * its square filled forever. Fusing costs you the object, never the discovery,
+ * exactly like crushing.
+ *
+ * No grit changes hands: the price is the three stones. That also means this
+ * function never touches tumbler_ledger, and the upgrade levels derived from
+ * it can't be disturbed by fusing.
+ *
+ * Re-reads every input before committing, so two taps — or the same shelf open
+ * on the phone and the iPad — can't spend one stone twice.
+ */
+export async function fuseGems(gems) {
+  const fresh = [];
+  for (const g of gems) {
+    const row = await db.gems.get(g.id);
+    if (!row || row.deleted) return null;
+    fresh.push(row);
+  }
+  if (!canFuse(fresh)) return null;
+
+  const seed = uuid();
+  const outcome = fuseOutcome(seed, fresh);
+  for (const row of fresh) await softDelete('gems', row.id);
+  return insertRow('gems', {
+    seed,
+    species: outcome.species,
+    grade: outcome.grade,
+    cycle_key: 'fused',
+  });
+}
+
+/*
+ * Undo a crush. The stone comes back and the grit goes out again as its own
+ * negative row — the crush row itself is never touched, because the grit
+ * balance and the upgrade levels are both sums over these rows and editing one
+ * in place is how a device that synced the original ends up disagreeing about
+ * both.
+ */
+export async function uncrushGem(gem, value) {
+  await updateRow('gems', gem.id, { deleted: 0 });
+  await addGrit(-value, 'crush', { note: `undo: ${gem.species}:${gem.grade}` });
 }
 
 export async function buyUpgrade(key, currentLevel, grit) {

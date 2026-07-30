@@ -1,0 +1,156 @@
+/*
+ * "Dark" — Paper after hours (§8). Same six hues, same furniture, same
+ * decoration; only the lightness inverts. It is NOT a separate design, and
+ * that's deliberate: switching themes at 11pm shouldn't feel like switching
+ * apps.
+ *
+ * The one thing that genuinely flips rather than darkens is --accent-N-ink.
+ * On Paper, "ink" means a deep version of the accent that's readable as text
+ * on white. Here it has to mean a PALE version, readable as text on near-black.
+ * Everything that paints an accent as letters — the wordmark, the points
+ * tally, the -ink rules across base.css — picks that up for free, which is the
+ * entire reason the ink tokens exist as a separate family.
+ *
+ * --on-accent stays dark: the accent fills themselves are still light pastels,
+ * so the tick that sits on top of one is still near-black.
+ */
+
+[data-theme='dark'] {
+  /* surfaces — cool near-black with the same violet cast Paper's white has,
+     so the two themes are recognisably the same room with the lights off */
+  --bg-page: #14131a;
+  --bg-surface: #1e1c26;
+  --bg-surface-alt: #262330;
+  --bg-sunken: #2c2937;
+
+  --text-primary: #ece9f4;
+  --text-secondary: #b3aec6;
+  --text-muted: #837d99;
+  --text-inverse: #1a1822;
+
+  /* The rainbow, a shade deeper than Paper's. Paper's pastels glow on black —
+     they read as neon rather than as the same palette. */
+  --accent-1: #f0899e; /* strawberry */
+  --accent-2: #f0a06f; /* peach     */
+  --accent-3: #e8c65c; /* lemon     */
+  --accent-4: #6fc78c; /* mint      */
+  --accent-5: #6cb2e0; /* sky       */
+  --accent-6: #a58ee0; /* lilac     */
+
+  /* "soft" means the quiet fill behind a chip or badge. On a light theme that
+     is a pale tint; here it is a dark, barely-saturated one. Same job. */
+  --accent-1-soft: #3d2731;
+  --accent-2-soft: #3e2e23;
+  --accent-3-soft: #3a3423;
+  --accent-4-soft: #22382c;
+  --accent-5-soft: #20323f;
+  --accent-6-soft: #2f2943;
+
+  /* Readable AS TEXT on the dark surfaces — pale, not deep. This is the token
+     family that inverts rather than darkens. */
+  --accent-1-ink: #ffadbe;
+  --accent-2-ink: #ffc199;
+  --accent-3-ink: #f7db86;
+  --accent-4-ink: #97e0b0;
+  --accent-5-ink: #9bd0f5;
+  --accent-6-ink: #c9b4f7;
+
+  /* Still dark: the accent fills are light, so what sits on one is ink. */
+  --on-accent: #1a1822;
+
+  --color-success: #7fd39b;
+  --color-warn: #e8b06a;
+  --color-danger: #f2879b;
+  --color-points: #f0cd72;
+
+  /* Heat ramp: the same hue walk as Paper, climbing in brightness instead of
+     saturation so a full day still reads as the loudest cell on the grid. */
+  /* Held well above the page rather than merely tinted: peach and lemon at low
+     lightness are brown and olive, and the low end of the ramp came out
+     looking like dirt on the calendar rather than like the palette. Every stop
+     keeps its hue and gains enough light to read as a colour. */
+  --heat-0: var(--bg-sunken);
+  --heat-1: #6d3f52;
+  --heat-2: #85543a;
+  --heat-3: #8a7534;
+  --heat-4: #2f7d55;
+  --heat-5: #2f74a8;
+  --heat-6: #6f57c9;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  /* Shadows barely register on a dark page, so the elevation cue is carried
+     by the surface being lighter than the page — the shadows just stop cards
+     from sitting flush. The hairline does the rest of the work. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.6);
+  --border-hairline: 1px solid rgba(236, 233, 244, 0.13);
+  --border-color: rgba(236, 233, 244, 0.13);
+  --focus-ring: var(--accent-5-ink);
+
+  /* Paper's tooth is dark dots on white; here it's light dots on black. */
+  --texture-page: radial-gradient(rgba(236, 233, 244, 0.045) 1px, transparent 1px);
+  --texture-card: none;
+
+  /* The bloom has to be much weaker than Paper's: the same alphas over black
+     read as six colored spotlights rather than as a tint. */
+  --gradient-page-glow: linear-gradient(
+    165deg,
+    rgba(240, 137, 158, 0.14) 0%,
+    rgba(240, 160, 111, 0.12) 14%,
+    rgba(232, 198, 92, 0.09) 28%,
+    rgba(111, 199, 140, 0.11) 42%,
+    rgba(108, 178, 224, 0.12) 56%,
+    rgba(165, 142, 224, 0.13) 70%,
+    transparent 100%
+  );
+  --gradient-card-wash: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.045),
+    rgba(255, 255, 255, 0) 55%
+  );
+  --gradient-primary: linear-gradient(135deg, var(--accent-4-soft), var(--accent-5-soft));
+
+  /* awning: the canvas is the same rainbow, hung off a dark rail */
+  --awning-rail: linear-gradient(180deg, #43405260, #232029);
+  --awning-ink: #ffffff;
+  --awning-ink-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
+  --awning-shadow: 0 9px 18px rgba(0, 0, 0, 0.5),
+    inset 0 3px 0 rgba(255, 255, 255, 0.28), inset 0 -3px 7px rgba(0, 0, 0, 0.3);
+
+  /* shelves: the same lilac-grey cabinet, unlit */
+  --shelf-frame: linear-gradient(180deg, #2d2939, #262231 60%, #1f1c28);
+  --shelf-frame-border: rgba(236, 233, 244, 0.16);
+  --shelf-frame-shadow: var(--shadow-md);
+  --shelf-back: linear-gradient(180deg, #17151f, #1f1c29 55%, #26232f);
+  --shelf-back-inset: inset 0 8px 16px rgba(0, 0, 0, 0.55),
+    inset 0 -3px 7px rgba(0, 0, 0, 0.3), inset 2px 0 6px rgba(0, 0, 0, 0.25),
+    inset -2px 0 6px rgba(0, 0, 0, 0.25);
+  --shelf-plank: linear-gradient(180deg, #4a4459 0 5px, #2b2837 5px);
+  --shelf-plank-shadow: 0 7px 11px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  --shelf-ink: #a9a3be;
+
+  /* Gem facets are color-mixed against --bg-surface, so they darken on their
+     own. What has to flip is the edge: a black girdle on a dark stone loses
+     the silhouette entirely. */
+  --gem-edge: rgba(236, 233, 244, 0.34);
+  --gem-inclusion: rgba(0, 0, 0, 0.4);
+
+  --font-display: 'Quicksand', ui-rounded, system-ui, sans-serif;
+  --font-body: 'Nunito Sans', system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Same mobile flattening as Paper: no page texture, softer shadows. */
+@media (max-width: 600px) {
+  [data-theme='dark'] {
+    --texture-page: none;
+    --shadow-md: var(--shadow-sm);
+    --text-secondary: #bdb8ce;
+  }
+}

@@ -9,6 +9,22 @@
     <link rel="icon" type="image/png" href="/icons/icon-192.png" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <title>Planner</title>
+    <script>
+      // First paint, before React or IndexedDB. The real preference lives in
+      // meta and App.jsx re-applies it a moment later; this only stops a dark
+      // boot from flashing white while the database opens.
+      try {
+        var p = localStorage.getItem('theme-pref') || 'auto';
+        var t =
+          p === 'auto'
+            ? matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'paper'
+            : p;
+        document.documentElement.dataset.theme = t;
+        document.documentElement.dataset.themePref = p;
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

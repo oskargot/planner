@@ -2,13 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db.js';
-import {
-  completeTask,
-  checkHabit,
-  uncheckHabit,
-  touchProject,
-  SIZE_POINTS,
-} from '../db/actions.js';
+import { checkHabit, uncheckHabit, touchProject } from '../db/actions.js';
 import { logicalDay, parseDay, monthLabel } from '../db/time.js';
 import {
   useBalance,
@@ -27,7 +21,7 @@ import Card from '../components/Card.jsx';
 import Check from '../components/Check.jsx';
 import Icon from '../components/Icon.jsx';
 import { itemAccent } from '../components/ColorPicker.jsx';
-import { SizeChip } from './Tasks.jsx';
+import { completeWithUndo } from './Tasks.jsx';
 
 // Tasks heads a full-height column on wide screens, so a five-row preview left
 // most of it empty. Still a preview — the card links to the whole list.
@@ -42,7 +36,7 @@ export default function Home() {
       <header className="row spread home-header">
         <h1 className="display wordmark">{APP_NAME}</h1>
         <div className="row" style={{ gap: 'var(--space-3)' }}>
-          <Link to="/shop/ledger" className="header-points" aria-label="Points">
+          <Link to="/settings/ledger" className="header-points" aria-label="Points">
             <div className="balance">
               <Icon name="spark" size={18} /> {balance ?? '…'}
             </div>
@@ -200,19 +194,17 @@ function TasksCard() {
     <Card title={`Tasks · ${open.length}`} accent={2} to="/tasks" className="card-tasks">
       {open.length === 0 && <p className="empty">All clear.</p>}
       <div className="stack-sm">
+        {/* No size chip here either — see the note on the task row. The
+            dashboard is for what's left to do, not for what it pays. */}
         {open.slice(0, LIST_LIMIT).map((t, i) => (
           <div className="row" key={t.id}>
             <Check
               on={false}
               accent={itemAccent(t, i)}
-              onClick={async (e) => {
-                floatPoints(e.currentTarget, SIZE_POINTS[t.size]);
-                await completeTask(t);
-              }}
+              onClick={(e) => completeWithUndo(t, e.currentTarget)}
               label={`Complete ${t.title}`}
             />
             <span className="grow">{t.title}</span>
-            <SizeChip size={t.size} />
           </div>
         ))}
       </div>

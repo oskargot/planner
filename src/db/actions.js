@@ -92,6 +92,34 @@ export async function deleteTask(task) {
   await softDelete('tasks', task.id);
 }
 
+/*
+ * Undo for deleteTask, wired to the toast. Lifting the tombstone is the easy
+ * half; the ledger is the half that matters. Deleting a *completed* task wrote
+ * a negative row, so restoring it writes a positive one — a third row, not an
+ * edit of either of the first two. History stays append-only and a restore
+ * that syncs to the iPad lands as its own fact rather than as a contradiction.
+ */
+export async function restoreTask(task) {
+  const kids = await db.subtasks.where('task_id').equals(task.id).toArray();
+  for (const k of kids) {
+    if (k.deleted) await updateRow('subtasks', k.id, { deleted: 0 });
+  }
+  await updateRow('tasks', task.id, { deleted: 0 });
+  if (task.done_at) {
+    const pts = SIZE_POINTS[task.size] ?? 0;
+    if (pts) {
+      await addLedger({
+        delta: pts,
+        reason: 'task',
+        sourceType: 'tasks',
+        sourceId: task.id,
+        day: logicalDay(),
+        note: `restored: ${task.title}`,
+      });
+    }
+  }
+}
+
 // ---- subtasks ----
 //
 // Worth 0 points, exactly like milestones (§5.1). They're structure inside a
@@ -138,9 +166,14 @@ export async function updateHabit(id, fields) {
   await updateRow('habits', id, fields);
 }
 
-// Deleting a habit does NOT reverse historical points (§5.2).
+// Deleting a habit does NOT reverse historical points (§5.2) — which is also
+// why restoring one is nothing but lifting the tombstone.
 export async function deleteHabit(id) {
   await softDelete('habits', id);
+}
+
+export async function restoreHabit(id) {
+  await updateRow('habits', id, { deleted: 0 });
 }
 
 export async function checkHabit(habitId, day) {
@@ -183,6 +216,10 @@ export async function updateProject(id, fields) {
 export async function deleteProject(id) {
   // Historical touch points stay (§5.2).
   await softDelete('projects', id);
+}
+
+export async function restoreProject(id) {
+  await updateRow('projects', id, { deleted: 0 });
 }
 
 export async function addMilestone(projectId, title) {
@@ -244,6 +281,10 @@ export async function deleteShopItem(id) {
   await softDelete('shop_items', id);
 }
 
+export async function restoreShopItem(id) {
+  await updateRow('shop_items', id, { deleted: 0 });
+}
+
 // Purchases are blocked when cost > balance (§5.2). Balance may only go
 // negative through 'adjust'.
 export async function purchaseItem(item) {
@@ -272,6 +313,45 @@ export async function redeemPurchase(id) {
   await updateRow('purchases', id, { redeemed_at: Date.now() });
 }
 
+/*
+ * Undo for a purchase. The purchase row is tombstoned and the points come back
+ * as a NEW positive row rather than by removing the negative one — a refund,
+ * not an erasure. The ledger keeps saying what actually happened, which is the
+ * whole reason it's append-only.
+ */
+export async function refundPurchase(purchase) {
+  const fresh = await db.purchases.get(purchase.id);
+  if (!fresh || fresh.deleted) return;
+  await softDelete('purchases', purchase.id);
+  await addLedger({
+    delta: fresh.cost_snapshot,
+    reason: 'purchase',
+    sourceType: 'purchases',
+    sourceId: fresh.id,
+    day: logicalDay(),
+    note: `refund: ${fresh.name_snapshot}`,
+  });
+}
+
 export async function adjustPoints(delta, note) {
   return addLedger({ delta, reason: 'adjust', day: logicalDay(), note });
+}
+
+// ---- ordering ----
+
+/*
+ * Move a row next to one of its neighbours by taking a fractional sort_order
+ * on the far side of it. Same trick the milestone arrows have always used,
+ * pulled out here because tasks, habits, projects and shop items all reorder
+ * now.
+ *
+ * Fractions rather than renumbering the whole list: renumbering writes every
+ * row, and every written row is a sync push and an LWW conflict waiting for
+ * the other device. One move should touch exactly one row.
+ */
+export async function moveRow(table, row, neighbor, before) {
+  if (!neighbor) return;
+  await updateRow(table, row.id, {
+    sort_order: neighbor.sort_order + (before ? -0.5 : 0.5),
+  });
 }

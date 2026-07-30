@@ -79,6 +79,10 @@
   --shadow-lg: 0 6px 18px rgba(0, 0, 0, 0.12);
   --border-hairline: 1px solid rgba(0, 0, 0, 0.12);
   --border-color: rgba(0, 0, 0, 0.12);
+  /* The keyboard's cursor. Only ever drawn for :focus-visible, so it never
+     appears for a finger or a trackpad click — but on a Magic Keyboard it is
+     the only thing telling you where you are. */
+  --focus-ring: #4d4d4d;
 
   /* texture — background-image values; flat themes set these to none */
   --texture-page: none;
@@ -127,7 +131,14 @@
      Grouped here because they're the one place in the app with real
      "material" — a themeless app would set them all flat. */
   --awning-stripe: var(--gradient-rainbow);
-  --awning-stripe-size: 168px 100%; /* six 28px bands; the scallop period is 28px */
+  /* One band per accent, six to a repeat. The band width is NOT fixed: the
+     awning measures itself and divides its own width into a whole number of
+     bands (see ShopStore). A hardcoded 28px meant the canvas ended mid-stripe
+     and the valance ended mid-scallop at whatever width the screen happened to
+     be — which is exactly what it looked like. The fallback only applies
+     before the first measurement. */
+  --awning-band: 28px;
+  --awning-stripe-size: calc(var(--awning-band) * 6) 100%;
   --awning-rail: linear-gradient(180deg, #ffffff, #e0e0e0);
   --awning-ink: #ffffff;
   --awning-ink-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);

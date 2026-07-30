@@ -157,10 +157,14 @@ h1, h2, h3 {
   .app { flex-direction: row; }
   .nav-bottom { display: none; }
 
-  /* A gutter off the rail, not a lane for the sub-tabs: the flyout floats over
-     the page and full-bleed pages (the collection grid) would otherwise start
-     hard against the hairline and run under it. */
-  .page { padding-left: var(--space-7); }
+  /* The flyout floats over the page rather than pushing it, so the page has to
+     leave it room. This used to be a --space-7 gutter, which was enough only
+     because the content column was capped at 900px and centred — the leftover
+     margin absorbed the panel. Now that pages use the full width, that margin
+     is gone and the panel was landing on top of the first task in the list.
+     So the gutter is the panel's width: ~115px for the longest label
+     ("Collection"), which .rail-subs is capped at to keep the two in step. */
+  .page { padding-left: 120px; }
 
   /* Just the icon column now — no gutter reserved beside it. The sub-page tabs
      slide out from behind this column when a section needs them and take no
@@ -193,13 +197,57 @@ h1, h2, h3 {
   .nav-rail {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: var(--space-6);
     width: 96px;
     padding: var(--space-4) var(--space-2);
     padding-left: calc(var(--space-2) + env(safe-area-inset-left));
     background: var(--bg-surface);
   }
+
+  /* The sections take the whole middle and centre themselves inside it, so
+     the balance above and the tools below can't push them off centre —
+     "nothing in this column may move" has to survive things being added to
+     the ends of it. */
+  .rail-sections {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-6);
+  }
+
+  .rail-points {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-1);
+    border-radius: var(--radius-md);
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: var(--size-sm);
+    color: var(--color-points);
+  }
+  .rail-points:hover { background: var(--bg-sunken); }
+
+  .rail-foot {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-1);
+  }
+
+  .rail-mini {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .rail-mini.active { background: var(--bg-sunken); color: var(--text-primary); }
 
   /* position: relative, z-index auto — so the group's own content paints above
      the flyout, but the flyout still belongs to .rail-wrap's stacking context
@@ -215,6 +263,10 @@ h1, h2, h3 {
     left: 100%;
     top: 50%;
     z-index: -1;
+    /* Capped so the panel can never grow past the gutter the page reserves for
+       it. It also wants to stay narrower than the rail's 96px so it's fully
+       tucked away at rest. */
+    max-width: 116px;
     transform: translate(0, -50%);
     display: flex;
     flex-direction: column;
@@ -934,8 +986,13 @@ h1, h2, h3 {
   box-shadow: var(--shadow-sm);
 }
 
-/* the scalloped valance. Its 28px mask period matches one stripe band, so the
-   scallops land one-per-color. */
+/* The scalloped valance. Its mask period is one stripe band, so the scallops
+   land one-per-colour — and because the band is measured from the awning's own
+   width (see ShopStore), the last scallop finishes at the right edge instead
+   of being sliced through the middle. Every radius here is derived from the
+   band rather than typed, or they'd drift apart the moment the width changes.
+   The circle's own radius is 1px over the black stop so the arc gets an
+   antialiased edge rather than a hard one. */
 .awning::after {
   content: '';
   position: absolute;
@@ -946,10 +1003,18 @@ h1, h2, h3 {
   background-image: var(--awning-stripe);
   background-size: var(--awning-stripe-size);
   background-repeat: repeat-x;
-  -webkit-mask: radial-gradient(circle 13px at 14px 0, #000 12px, transparent 12.5px) 0 0 / 28px 15px
-    repeat-x;
-  mask: radial-gradient(circle 13px at 14px 0, #000 12px, transparent 12.5px) 0 0 / 28px 15px
-    repeat-x;
+  -webkit-mask: radial-gradient(
+      circle calc(var(--awning-band) / 2 - 1px) at calc(var(--awning-band) / 2) 0,
+      #000 calc(var(--awning-band) / 2 - 2px),
+      transparent calc(var(--awning-band) / 2 - 1.5px)
+    )
+    0 0 / var(--awning-band) 15px repeat-x;
+  mask: radial-gradient(
+      circle calc(var(--awning-band) / 2 - 1px) at calc(var(--awning-band) / 2) 0,
+      #000 calc(var(--awning-band) / 2 - 2px),
+      transparent calc(var(--awning-band) / 2 - 1.5px)
+    )
+    0 0 / var(--awning-band) 15px repeat-x;
 }
 
 .awning-title {
@@ -1564,6 +1629,557 @@ h1, h2, h3 {
   display: flex;
   align-items: center;
   gap: var(--space-1);
+}
+
+/* ==========================================================================
+   Wide-screen shape: two-pane screens, density, and the pointer
+   ========================================================================== */
+
+/*
+ * The content column. 900px was the cap everywhere, which on an iPad in
+ * landscape left ~180px of dot grid down the right of every page. Reading-width
+ * still matters for a single column of prose-shaped rows, so the cap only lifts
+ * where the layout actually has two columns to fill.
+ */
+@media (min-width: 900px) {
+  .page-inner { max-width: 1180px; }
+}
+
+/*
+ * Master–detail. On a phone `.split` is nothing at all — the pages render
+ * their list and the detail is a drawer or a route. The grid only exists
+ * where there's room for both halves at once.
+ *
+ * The detail pane sticks: the whole point is that it stays put while you work
+ * down a long list, so scrolling the list must not scroll the thing you're
+ * reading. It sticks to the scroll container, which is `.page`.
+ */
+@media (min-width: 900px) {
+  .split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  .split-detail {
+    position: sticky;
+    top: 0;
+    max-height: calc(100vh - var(--space-8));
+    overflow-y: auto;
+    padding: var(--space-4);
+    border: var(--border-hairline);
+    border-radius: var(--radius-lg);
+    background: var(--bg-surface);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+/* Not an error state — an invitation. Sized so the pane doesn't collapse to a
+   sliver before anything is chosen. */
+.split-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 220px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.detail-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+/* An input that doesn't look like one until you're in it. The title is the
+   heading of the pane and editing it should feel like correcting a heading,
+   not like filling in a form. */
+.detail-title {
+  font-family: var(--font-display);
+  font-size: var(--size-lg);
+  font-weight: var(--weight-bold);
+  padding: var(--space-1) var(--space-2);
+  border-color: transparent;
+  background: none;
+}
+.detail-title:hover { border-color: var(--border-color); }
+.detail-title:focus { border-color: var(--border-color); background: var(--bg-surface); }
+
+/* The selected row in a two-pane list. It has to read as "this is what the
+   pane is showing" from the corner of your eye, without competing with the
+   accent stripe that says which colour the item is. */
+.list-item.selected {
+  background: var(--bg-surface-alt);
+  box-shadow: inset 0 0 0 1.5px var(--border-color), var(--shadow-sm);
+}
+
+/*
+ * Density. Oskar asked for more on screen, and a wide screen is exactly where
+ * a phone's touch targets stop being the constraint — there's a trackpad. Rows
+ * and cards tighten; nothing below 900px moves, because down there the padding
+ * IS the touch target.
+ */
+@media (min-width: 900px) {
+  .list-item { padding: var(--space-2) var(--space-3); gap: var(--space-2); }
+  .list-item + .list-item { margin-top: var(--space-1); }
+  .card { padding: var(--space-4); }
+  .home-grid { gap: var(--space-3); }
+}
+
+/*
+ * Pointer affordances. The app was built thumb-first and had almost nothing to
+ * say to a cursor: no hover states, and focus was invisible. On a Magic
+ * Keyboard that's most of the day.
+ *
+ * :focus-visible, never :focus — a ring that appears on every mouse click is
+ * noise, and the browser already knows the difference.
+ */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .list-item.longpress:hover,
+  .gem-slot:hover,
+  .box:hover { box-shadow: var(--shadow-md); }
+  .btn:hover:not(:disabled) { border-color: var(--text-muted); }
+  .icon-btn:hover:not(:disabled) { color: var(--text-primary); }
+  .card-link:hover { text-decoration: underline; }
+  .rail-tab:hover .nav-icon,
+  .rail-mini:hover { color: var(--text-primary); }
+  .heat-cell:hover { outline: 1.5px solid var(--text-muted); }
+}
+
+/* The hint line says the gesture you actually have. Holding is right on a
+   phone and wrong on a trackpad, where nobody's instinct is to press and wait. */
+.hint-touch { display: inline; }
+.hint-pointer { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .hint-touch { display: none; }
+  .hint-pointer { display: inline; }
+}
+
+/* ---------- task list: toolbar and groups ---------- */
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.toolbar-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1 1 180px;
+  min-width: 0;
+  padding: 0 var(--space-2);
+  border: var(--border-hairline);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+}
+.toolbar-search input {
+  border: none;
+  background: none;
+  padding: var(--space-2) 0;
+  min-width: 0;
+}
+.toolbar-search input:focus { outline: none; }
+.toolbar-search:focus-within { border-color: var(--focus-ring); }
+
+.task-group + .task-group { margin-top: var(--space-4); }
+
+.group-heading {
+  font-family: var(--font-display);
+  font-size: var(--size-sm);
+  font-weight: var(--weight-bold);
+  color: var(--text-muted);
+  text-transform: lowercase;
+  margin-bottom: var(--space-2);
+}
+
+/* ---------- habits ---------- */
+
+/* The number that makes checking the box today rather than tomorrow matter. */
+.streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--accent-3-soft);
+  color: var(--accent-3-ink);
+  font-size: var(--size-xs);
+  font-weight: var(--weight-bold);
+}
+
+@media (min-width: 900px) {
+  .habits-page-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
+    gap: var(--space-5);
+    align-items: start;
+  }
+}
+
+.month-panel {
+  padding: var(--space-4);
+  border: var(--border-hairline);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+}
+
+/* Days inside the backfill window are buttons; the rest are plain divs. Same
+   cell either way — only the cursor tells them apart. */
+.month-panel button.heat-cell { cursor: pointer; }
+
+/* ---------- toasts ---------- */
+
+/*
+ * Bottom-left, above everything. On a phone it clears the bottom bar; on a
+ * wide screen it clears the rail. Fixed rather than in flow so it never
+ * reflows the page it's reporting on.
+ */
+.toasts {
+  position: fixed;
+  z-index: 60;
+  left: var(--space-3);
+  right: var(--space-3);
+  /* Clears the bottom bar including a sub-tab row — covering the nav would
+     hide the way out of whatever you just undid. */
+  bottom: calc(140px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+@media (min-width: 900px) {
+  .toasts {
+    left: calc(96px + var(--space-4));
+    right: auto;
+    bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+    max-width: 420px;
+  }
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border: var(--border-hairline);
+  border-radius: var(--radius-full);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--size-sm);
+  animation: toast-in var(--dur-normal) var(--ease-bounce);
+}
+
+.toast.danger { color: var(--color-danger); }
+
+@keyframes toast-in {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.toast-undo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--bg-sunken);
+  color: var(--text-primary);
+  font-weight: var(--weight-bold);
+  font-size: var(--size-xs);
+}
+
+/* ---------- the ⌘K palette ---------- */
+
+.palette-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: var(--space-6) var(--space-4);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.palette {
+  width: min(560px, 100%);
+  margin-top: 6vh;
+  display: flex;
+  flex-direction: column;
+  max-height: 70vh;
+  border: var(--border-hairline);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: palette-in var(--dur-fast) var(--ease-standard);
+}
+
+@keyframes palette-in {
+  from { transform: translateY(-6px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.palette-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--border-hairline);
+  color: var(--text-muted);
+}
+.palette-field input {
+  border: none;
+  background: none;
+  font-size: var(--size-md);
+  padding: 0;
+}
+.palette-field input:focus { outline: none; }
+
+.palette-kbd {
+  font-family: var(--font-mono);
+  font-size: var(--size-2xs);
+  padding: 2px var(--space-2);
+  border: var(--border-hairline);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.palette-list {
+  overflow-y: auto;
+  padding: var(--space-2);
+}
+
+.palette-group {
+  font-size: var(--size-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  padding: var(--space-2) var(--space-2) var(--space-1);
+}
+
+.palette-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+/* One highlight, driven by the cursor index — the mouse moves it too, so
+   there's never a keyboard selection and a hover selection at the same time
+   disagreeing about what Enter will do. */
+.palette-row.active { background: var(--bg-sunken); }
+
+.palette-icon { display: inline-flex; color: var(--text-muted); }
+
+.palette-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-top: var(--border-hairline);
+  flex-wrap: wrap;
+}
+
+/* Hidden where there's no keyboard to press. */
+.shortcuts { display: grid; gap: var(--space-2); }
+.shortcuts-card { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .shortcuts-card { display: flex; }
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+  font-size: var(--size-sm);
+  color: var(--text-muted);
+}
+
+/* ---------- stats ---------- */
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+@media (min-width: 700px) {
+  .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
+}
+
+.tile {
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  border: var(--border-hairline);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+  border-top: 3px solid var(--tile-accent);
+}
+
+.tile-value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--size-xl);
+  line-height: var(--leading-tight);
+}
+
+.tile-label { font-size: var(--size-xs); color: var(--text-muted); }
+
+.stats-grid { display: grid; gap: var(--space-3); }
+.stats-grid .card { margin-bottom: 0; }
+
+@media (min-width: 900px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+    align-items: start;
+  }
+}
+
+/* One column per day. No axis and no gridlines: the shape is the message, and
+   the number is in the tooltip for the day you actually care about. */
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 90px;
+  margin-bottom: var(--space-3);
+}
+.bars.tall { height: 110px; }
+
+.bar-slot {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+}
+
+/* A labelled column: the track fills the height and the number sits under it,
+   outside the track. Inside, a "0" printed on an empty grey track read as part
+   of the bar rather than as its value. */
+.bar-col {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.bar-col .bar-slot { width: 100%; }
+
+.bar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: var(--radius-sm);
+  transition: height var(--dur-slow) var(--ease-standard);
+}
+
+.bar-label { font-size: var(--size-2xs); color: var(--text-muted); }
+
+.share {
+  display: flex;
+  height: 14px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  background: var(--bg-sunken);
+}
+.share-seg { height: 100%; }
+
+.habit-stat + .habit-stat {
+  padding-top: var(--space-3);
+  border-top: var(--border-hairline);
+}
+
+.strip {
+  display: flex;
+  gap: 2px;
+  margin: var(--space-2) 0 var(--space-1);
+}
+
+.strip-cell {
+  flex: 1;
+  height: 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+}
+
+/* Days before the habit existed are drawn as nothing rather than as a miss —
+   the same rule the heat map's denominator follows. */
+.strip-cell.void { background: none; }
+
+/* ---------- gem fusion ---------- */
+
+.fuse-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  border: var(--border-hairline);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+/* A picked stone lifts off the shelf. Outline rather than a fill so the gem's
+   own colours are untouched — the whole point of picking three is comparing
+   what they are. */
+.gem-slot.picked {
+  outline: 2px solid var(--accent-6-ink);
+  outline-offset: 3px;
+  border-radius: var(--radius-md);
+  transform: translateY(-3px);
+}
+
+/* The shortfall line under an unaffordable box. "9 more" alone reads as nine
+   more of the item; the spark says it's points. */
+.box-note.short {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--text-secondary);
 }
 
 /* motion off: kill every animation/transition */

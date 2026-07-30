@@ -2,6 +2,7 @@
 
 import { db } from './db.js';
 import { dayEndMs, logicalDay, daysBetween, addDays } from './time.js';
+import { SIZE_POINTS } from './actions.js';
 import { useLiveQuery } from 'dexie-react-hooks';
 
 // Balance is always computed from the ledger — there is no balance column (§4).
@@ -148,6 +149,188 @@ export function useGreetingState() {
       unredeemed,
       tumblerReady,
       hour: new Date().getHours(),
+    };
+  }, [], null);
+}
+
+/*
+ * Per-habit streaks. Same "today hasn't had its chance yet" rule the greeting
+ * uses: an unchecked today is stepped over rather than counted as a miss, or
+ * every streak in the app would read zero until the first check of the
+ * morning — which is precisely when a streak is supposed to be the reason you
+ * check it.
+ *
+ * `best` walks the whole history rather than only the current run, so a streak
+ * you broke last month is still worth something.
+ */
+export function habitStreaks(entries, today = logicalDay()) {
+  const byHabit = new Map();
+  for (const e of entries) {
+    if (e.deleted) continue;
+    if (!byHabit.has(e.habit_id)) byHabit.set(e.habit_id, new Set());
+    byHabit.get(e.habit_id).add(e.day);
+  }
+
+  const out = new Map();
+  for (const [habitId, days] of byHabit) {
+    let cursor = days.has(today) ? today : addDays(today, -1);
+    let streak = 0;
+    while (days.has(cursor)) {
+      streak++;
+      cursor = addDays(cursor, -1);
+    }
+
+    // Best run: walk the sorted days and break wherever there's a gap.
+    const sorted = [...days].sort();
+    let best = 0;
+    let run = 0;
+    let prev = null;
+    for (const d of sorted) {
+      run = prev && daysBetween(prev, d) === 1 ? run + 1 : 1;
+      if (run > best) best = run;
+      prev = d;
+    }
+
+    out.set(habitId, { streak, best, total: days.size, days });
+  }
+  return out;
+}
+
+export function useHabitStreaks() {
+  return useLiveQuery(async () => {
+    const entries = await db.habit_entries.toArray();
+    return habitStreaks(entries);
+  }, [], null);
+}
+
+/*
+ * Everything the Stats page shows, in one pass — same reasoning as
+ * useGreetingState: the numbers have to agree with each other, and eight
+ * separate live queries settling at eight different moments is how you get a
+ * page where the totals don't add up.
+ *
+ * Nothing here is stored. Every number is derived from the ledger and the
+ * source tables, so there is still no balance column anywhere, and a stat can
+ * never disagree with the history it came from.
+ *
+ * Grit is deliberately absent. The tumbler is a separate economy and this page
+ * belongs to points; mixing them here would be the first crack in that wall.
+ */
+const WINDOW_DAYS = 30;
+const WEEKS = 8;
+
+export function useStats() {
+  return useLiveQuery(async () => {
+    const today = logicalDay();
+    const window = Array.from({ length: WINDOW_DAYS }, (_, i) =>
+      addDays(today, -(WINDOW_DAYS - 1 - i))
+    );
+    const windowSet = new Set(window);
+
+    // ---- ledger ----
+    const ledger = (await db.ledger.toArray()).filter((r) => !r.deleted);
+    const perDay = new Map(window.map((d) => [d, { day: d, earned: 0, spent: 0 }]));
+    const bySource = { task: 0, habit: 0, project: 0, adjust: 0 };
+    let lifetimeEarned = 0;
+    let lifetimeSpent = 0;
+    let balance = 0;
+
+    for (const r of ledger) {
+      balance += r.delta;
+      if (r.reason === 'purchase') {
+        // A refund is a positive row with reason 'purchase'; netting them
+        // keeps "spent" honest rather than counting a refunded buy twice.
+        lifetimeSpent -= r.delta;
+      } else {
+        if (r.delta > 0) lifetimeEarned += r.delta;
+        if (bySource[r.reason] !== undefined) bySource[r.reason] += r.delta;
+      }
+      if (windowSet.has(r.day)) {
+        const slot = perDay.get(r.day);
+        if (r.reason === 'purchase') slot.spent -= r.delta;
+        else slot.earned += r.delta;
+      }
+    }
+
+    const days = window.map((d) => perDay.get(d));
+    const peak = Math.max(1, ...days.map((d) => d.earned));
+    const bestDay = days.reduce((a, b) => (b.earned > a.earned ? b : a), days[0]);
+
+    // ---- habits ----
+    const habitRows = (await db.habits.toArray()).filter((h) => !h.deleted && h.active);
+    const entries = await db.habit_entries.toArray();
+    const streaks = habitStreaks(entries, today);
+    const habits = habitRows.map((h) => {
+      const s = streaks.get(h.id) ?? { streak: 0, best: 0, days: new Set() };
+      // Only count days the habit actually existed for, or a habit added last
+      // week reads as 3% consistent forever.
+      const eligible = window.filter((d) => h.created_at <= dayEndMs(d));
+      const done = eligible.filter((d) => s.days.has(d));
+      return {
+        id: h.id,
+        name: h.name,
+        emoji: h.emoji,
+        color: h.color,
+        streak: s.streak,
+        best: s.best,
+        done: done.length,
+        eligible: eligible.length,
+        ratio: eligible.length ? done.length / eligible.length : 0,
+        marks: window.map((d) => (s.days.has(d) ? 1 : h.created_at <= dayEndMs(d) ? 0 : -1)),
+      };
+    });
+
+    // ---- tasks ----
+    const tasks = (await db.tasks.toArray()).filter((t) => !t.deleted);
+    const doneTasks = tasks.filter((t) => t.done_at);
+    const weeks = Array.from({ length: WEEKS }, (_, i) => ({
+      start: addDays(today, -(7 * (WEEKS - 1 - i)) - 6),
+      end: addDays(today, -(7 * (WEEKS - 1 - i))),
+      count: 0,
+      points: 0,
+    }));
+    const sizes = { S: 0, M: 0, L: 0 };
+    for (const t of doneTasks) {
+      sizes[t.size] = (sizes[t.size] ?? 0) + 1;
+      const d = logicalDay(t.done_at);
+      const w = weeks.find((wk) => d >= wk.start && d <= wk.end);
+      if (w) {
+        w.count++;
+        w.points += SIZE_POINTS[t.size] ?? 0;
+      }
+    }
+    const weekPeak = Math.max(1, ...weeks.map((w) => w.count));
+
+    // ---- projects ----
+    const touches = (await db.project_touches.toArray()).filter((t) => !t.deleted);
+    const projects = (await db.projects.toArray())
+      .filter((p) => !p.deleted && p.status === 'active')
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        color: p.color,
+        touched: touches.filter((t) => t.project_id === p.id && windowSet.has(t.day)).length,
+        stale: staleness(touches, p.id),
+      }))
+      .sort((a, b) => b.touched - a.touched);
+
+    return {
+      today,
+      balance,
+      lifetimeEarned,
+      lifetimeSpent,
+      bySource,
+      days,
+      peak,
+      bestDay,
+      habits,
+      weeks,
+      weekPeak,
+      sizes,
+      tasksOpen: tasks.length - doneTasks.length,
+      tasksDone: doneTasks.length,
+      projects,
+      windowDays: WINDOW_DAYS,
     };
   }, [], null);
 }

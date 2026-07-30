@@ -67,14 +67,16 @@ troubleshooting in `deploy/README.md`.
 
 `main` is what Oskar pulls on jellybot, and it's kept fast-forwarded to
 whatever the current working branch is after each push. Current branch is
-`claude/planner-sub-tabs-redesign-2tp87l` (the sub-tab flyout); before it were
-`claude/planner-redesign-features-tmhiy4` (palette + long-press + tumbler),
-`claude/iphone-planner-redesign-p6fw8r` (the iPhone pass) and
+`claude/planner-app-revamp-planning-ll1wyu` (the iPad revamp: dark theme,
+two-pane screens, ⌘K, stats, undo toasts, gem fusion); before it were
+`claude/planner-sub-tabs-redesign-2tp87l` (the sub-tab flyout),
+`claude/planner-redesign-features-tmhiy4` (colour palette + long-press +
+tumbler), `claude/iphone-planner-redesign-p6fw8r` (the iPhone pass) and
 `claude/oskar-planner-v1-wqpzus` (v1). Both pushes every time:
 
 ```bash
-git push -u origin claude/planner-sub-tabs-redesign-2tp87l
-git push origin claude/planner-sub-tabs-redesign-2tp87l:main
+git push -u origin claude/planner-app-revamp-planning-ll1wyu
+git push origin claude/planner-app-revamp-planning-ll1wyu:main
 ```
 
 ## Architecture map
@@ -83,7 +85,11 @@ git push origin claude/planner-sub-tabs-redesign-2tp87l:main
 src/
   config.js          APP_NAME + declarative NAV (add a page = entry + route)
   greeting.js        pure: time-of-day hello + the ranked flavor lines
+  theme.js           pref (paper|dark|mono|auto) → resolved data-theme, and
+                     the prefers-color-scheme listener behind 'auto'
+  toast.js           the toast store; every undo handed to it is append-only
   useLongPress.js    hold-to-edit gesture (iOS callout/selection suppression)
+  useMediaQuery.js   useWide() — the ONE breakpoint the DOM branches on
   db/
     time.js          logicalDay() and ALL date math — never elsewhere
     db.js            Dexie schema, insertRow/updateRow/softDelete, meta
@@ -92,18 +98,23 @@ src/
     tumbler.js       every GRIT mutation; only place `tumbler_ledger` is
                      written. Never touches points, and vice versa.
     selectors.js     balance, earned-today, heat ratios, staleness,
-                     useGreetingState (one snapshot for the Home line)
+                     habitStreaks, useGreetingState + useStats (one snapshot
+                     each, so the numbers on a screen always agree)
     sync.js          push/pull loop (LWW on updated_at), debounced 2s
     backup.js        client-side JSON export/import (merge, LWW)
-  themes/            _tokens.css is the contract; paper (default) + mono
+  themes/            _tokens.css is the contract; paper + dark + mono
   components/        NavBar (bottom bar <900px; ≥900px an icon rail whose
-                     sub-page tabs fly out from behind it), Card,
-                     Check, ColorPicker (itemAccent helper lives here),
-                     Icon (the whole inline-SVG glyph set)
+                     sub-page tabs fly out from behind it, balance on top
+                     and search/gear at the foot), Card, Check,
+                     ColorPicker (itemAccent helper lives here),
+                     Icon (the whole inline-SVG glyph set),
+                     Palette (⌘K), Toasts (the undo rail)
   tumbler/
-    gems.js          pure generation: species, grades, cycles, odds, geometry
+    gems.js          pure generation: species, grades, cycles, odds, fusion,
+                     geometry
     Gem.jsx          the SVG renderer (dumb; all maths lives in gems.js)
-  pages/             one file per screen
+  pages/             one file per screen — EXCEPT Studio.jsx, which is both
+                     /studio and /studio/p/:id (see the two-pane note below)
 server/
   index.js           GET/POST /api/sync, LWW upserts, serves dist/, cache
                      headers, additive column migrations (ensureColumn)
@@ -118,6 +129,11 @@ scripts/
 - **Ledger is append-only** and the only source of truth for points. No
   balance column anywhere. Undo = a second row with negative delta. Deleting
   a completed task reverses its points; deleting habits/projects does NOT.
+- **Every undo is a new action, never an edit of history.** The toasts made
+  this load-bearing: restoring a deleted task re-awards its points as a third
+  row, a refunded purchase is a positive `purchase` row, an un-crushed gem is a
+  negative `crush` row. Rubbing out the original would make a device that
+  already synced it disagree about the balance forever.
 - **Points and grit never mix.** The tumbler is a separate economy: no task
   earns grit, no gem buys a shop item, and neither ledger is ever read by the
   other side. `tumbler_ledger` follows the same append-only rule — the grit
@@ -135,11 +151,17 @@ scripts/
   IDs (uuid). Every write bumps `updated_at` (that's what syncs).
 - **Theming: tokens only.** No literal colors/shadows/radii/fonts in
   component CSS — everything through `var(--...)` from `_tokens.css`, themed
-  in `paper.css`/`mono.css`. The mono theme exists to prove the contract.
+  in `paper.css`/`dark.css`/`mono.css`. The mono theme exists to prove the
+  contract. `data-theme` only ever holds a REAL theme; `auto` is resolved in
+  `theme.js` and never reaches CSS, so every selector stays a plain
+  `[data-theme='dark']`.
 - **`--accent-N` is a pale pastel and is NOT readable as text.** Anything that
   paints an accent AS a glyph or letters uses `--accent-N-ink`; anything that
   puts ink ON an accent fill (the checkbox tick) uses `--on-accent`. Painting
   a rainbow into text takes `--gradient-rainbow-ink`, not the pastel sweep.
+  `-ink` means "readable as text", NOT "darker": on Paper it's a deep version
+  of the accent, on Dark it's a pale one. That inversion is the only reason
+  the same rules work in both themes.
 - **Gradients are decoration, never meaning.** The `--gradient-*` and
   awning/shelf tokens exist so Mono can collapse them all to flat ink; if a
   screen stops making sense under Mono, something meaningful was hiding in
@@ -161,7 +183,19 @@ scripts/
   habit rows and shelf gems all use `useLongPress`; a primary action inside a
   long-press target (checkbox, price tag) must `stopPropagation` on
   `pointerdown` or a hold will fire both. Each such screen carries one quiet
-  `.longpress-hint` line, which is the whole discoverability budget.
+  `.longpress-hint` line, which is the whole discoverability budget — and that
+  line says "hold" or "right-click" depending on `(hover: hover) and
+  (pointer: fine)`, because nobody's instinct on a trackpad is to press and
+  wait. `useLongPress` has always mapped `contextmenu` to the same handler.
+- **Two-pane screens are one component, not two.** Tasks and Studio render a
+  list on a phone and list-plus-detail at ≥900px, branching on `useWide()`.
+  Studio serves `/studio` and `/studio/p/:id` from the same file specifically
+  so a list module and a detail module can't end up importing each other. The
+  phone paths are untouched by this: drawer, long-press editor, full-page
+  project. Nothing may exist only in the wide layout.
+- **No confirm() anywhere.** A native dialog in a standalone PWA reads as the
+  browser breaking through the app, and it asks before you can see what
+  happened. Destructive actions do the thing and offer a toast with an undo.
 - Schema changes: update BOTH `server/schema.sql` (+ `ensureColumn`
   migration + `TABLES` column list in `server/index.js`) and note that Dexie
   needs no version bump for unindexed fields — but DOES need one for a new
@@ -210,7 +244,14 @@ odds. If a change would create a reason to feel late, it's the wrong change.
   no tick to miss, so any amount of time with the app closed is correct.
 - **The collection log is separate from the shelf.** A discovery is recorded by
   the `gems` row existing — tombstones included — so crushing a stone can never
-  cost you a square. That's what makes crushing a duplicate a free decision.
+  cost you a square. That's what makes crushing a duplicate a free decision,
+  and it's what makes fusing one free too.
+- **Fusion: three stones of one grade → one of the next grade up.** The result's
+  species is drawn from the three you fed it, so three of a kind is how you
+  aim at a specific square instead of waiting for the barrel to hand it to
+  you. The inputs are tombstoned (see above — the squares survive), the price
+  is the stones and nothing else, and `fuseGems` never touches
+  `tumbler_ledger`. Flawless is the ceiling; there's nothing above it.
 - Balance knobs all live in `tumbler/gems.js` (`CYCLES`, `rollGrade`,
   `rollSpecies`, `GRADES[].grit`) and `db/tumbler.js` (`UPGRADES`).
 - Gem identity (species/grade/name) is STORED on the row; only the drawing is
@@ -222,11 +263,25 @@ odds. If a change would create a reason to feel late, it's the wrong change.
 
 ## Known state / open threads
 
-- Named "Planner" as of this branch (wordmark, title, PWA manifest). Still a
-  plain descriptive name rather than the one from §12 if he ever picks one.
-- The tumbler's numbers are a first pass, tuned by reasoning rather than by
-  play. Expect Oskar to want the early game faster or the upgrades cheaper
-  once he's lived with it for a week.
+- Named "Planner" as of the sub-tabs branch (wordmark, title, PWA manifest).
+  Still a plain descriptive name rather than the one from §12 if he ever
+  picks one.
+- The tumbler was retuned once after Oskar lived with it: cycles 2/6/14h →
+  1/4/10h, speed 8% → 10% a level, all three upgrade tracks ~25% cheaper. That
+  was in response to "it's a little slow", not to measurement — expect another
+  pass. Fusion is brand new and completely untuned by play.
+- Theme defaults to `auto` for anyone whose `theme` meta is unset, which
+  includes Oskar unless he's pressed a theme button. Auto follows the system,
+  which on iOS follows its own sunset schedule. `index.html` has an inline
+  script that reads the mirrored `localStorage` preference before React boots;
+  without it a dark launch flashes white for as long as IndexedDB takes to
+  open, which is the exact thing auto exists to prevent.
+- Stats deliberately shows no grit and no combined score. Points and grit
+  don't mix, and a single number over both would be the first crack in that.
+- Task rows no longer show a size chip anywhere (list or Home) — the size is
+  in the editor and the detail pane only. It's something you set once.
+- The Tasks toolbar takes two rows on a 390px phone. Acceptable for now; if it
+  annoys, the group chips are the half to hide behind a toggle.
 - Home habits calendar shows the calendar month; a rolling ~5-week window
   was floated as an alternative if early-month emptiness annoys.
 - Home is one card per row on a phone and TWO columns above 700px: habits →
@@ -241,14 +296,24 @@ odds. If a change would create a reason to feel late, it's the wrong change.
   tumbler's shelf reuses the same furniture on purpose. Boxes per shelf is a real number from a matchMedia hook,
   not CSS auto-fill — each shelf draws its own plank, so the planks have to
   line up with actual rows.
+- The awning measures itself and divides its width into a whole number of
+  bands (`--awning-band`, set inline by `<Awning>`); the stripe gradient and
+  the scallop mask are both derived from it. The band was a hardcoded 28px,
+  and since no screen is a multiple of 28 the canvas always ended mid-stripe
+  and the valance mid-scallop — very visible on a phone, where a sliced
+  scallop is a sixth of the awning. Don't reintroduce a fixed period.
 - `-webkit-line-clamp` needs a non-positioned element: absolute positioning
   blockifies `display: -webkit-box` and silently drops the clamp. That's why
   `.box-name` clamps an inner `<span>`.
 - Oskar picked the rainbow ripple for the tap effect; the sparkle-stars and
   bubble variants were the runners-up if he wants to swap.
-- Left rail appears at ≥900px, so iPad portrait gets it too; Oskar hasn't
-  confirmed whether portrait should keep the bottom bar instead.
-- The rail is a fixed icon column and nothing else. The sub-page tabs are a
+- Left rail appears at ≥900px. Confirmed: iPad portrait (834pt) keeps the
+  bottom bar and that's what he wants — he doesn't use portrait. Don't lower
+  the breakpoint to "fix" it.
+- The rail is an icon column plus the balance on top and search/gear at the
+  foot. The icons live in their own `.rail-sections` flex child that takes the
+  whole middle and centres inside it, so adding things to either end can't
+  push them off centre. The sub-page tabs are a
   flyout that slides out from behind it, absolutely positioned beside the
   section they belong to and centred on it — no lane is reserved, so a section
   without sub-pages costs no width. Out of flow on purpose: the section icons
@@ -265,9 +330,13 @@ odds. If a change would create a reason to feel late, it's the wrong change.
   - Labels went back to horizontal: `writing-mode: vertical-rl` only existed to
     fit the old 52px gutter, and a panel floating over the page can be as wide
     as its longest word.
-  - It floats over the page rather than pushing it, so `.page` takes a
-    `--space-7` left padding at ≥900px. That's a gutter off the rail, not a lane
-    for the tabs: without it the full-bleed collection grid ran under the panel.
+  - It floats over the page rather than pushing it, so `.page` reserves 120px
+    of left padding at ≥900px and `.rail-subs` is capped at 116px to match.
+    This was `--space-7`, which only worked because `.page-inner` was capped at
+    900px and centred — the leftover margin absorbed the panel. Now that pages
+    use the full width (`max-width: 1180px` at ≥900px) that margin is gone, and
+    at `--space-7` the flyout sat on top of the first row of the task list.
+    Change one of those three numbers and you have to change the others.
 - The page bloom needs its fade-to-page-color layer in `base.css`. It's a
   165deg gradient in a wide short tile, so its stops don't line up with the
   tile's bottom edge and it left a faint horizontal seam across every page.

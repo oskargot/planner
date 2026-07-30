@@ -108,7 +108,9 @@ export async function loadSettings() {
   const h = await getMeta('day_rollover_hour');
   if (h !== null) setRolloverHourCache(h);
   return {
-    theme: (await getMeta('theme')) || 'paper',
+    // 'auto' by default: a planner that's open at 1am shouldn't be the thing
+    // that wakes you up. See theme.js for how the preference resolves.
+    theme: (await getMeta('theme')) || 'auto',
     motion: (await getMeta('motion')) !== 'off',
     rolloverHour: h !== null ? Number(h) : 4,
   };

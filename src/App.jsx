@@ -1,19 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
-import { NAV, matchNav } from './config.js';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { NAV, matchNav, sectionPath } from './config.js';
 import { loadSettings } from './db/db.js';
 import { startSync } from './db/sync.js';
+import { applyTheme } from './theme.js';
 import NavBar from './components/NavBar.jsx';
 import Icon from './components/Icon.jsx';
+import Toasts from './components/Toasts.jsx';
+import Palette from './components/Palette.jsx';
 
 import Home from './pages/Home.jsx';
+import Stats from './pages/Stats.jsx';
 import Tasks from './pages/Tasks.jsx';
 import TasksDone from './pages/TasksDone.jsx';
 import HabitsToday from './pages/HabitsToday.jsx';
 import HabitsMonth from './pages/HabitsMonth.jsx';
+import HabitsArchived from './pages/HabitsArchived.jsx';
 import Studio from './pages/Studio.jsx';
 import StudioArchived from './pages/StudioArchived.jsx';
-import ProjectDetail from './pages/ProjectDetail.jsx';
 import ShopStore from './pages/ShopStore.jsx';
 import ShopInventory from './pages/ShopInventory.jsx';
 import ShopLedger from './pages/ShopLedger.jsx';
@@ -22,12 +26,13 @@ import TumblerShelf from './pages/TumblerShelf.jsx';
 import TumblerCollection from './pages/TumblerCollection.jsx';
 import Settings from './pages/Settings.jsx';
 
-const DEFAULT_SETTINGS = { theme: 'paper', motion: true };
+const DEFAULT_SETTINGS = { theme: 'auto', motion: true };
 
 export default function App() {
   const location = useLocation();
   const [ready, setReady] = useState(false);
   const [bootError, setBootError] = useState(null);
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   useEffect(() => {
     // Older iOS Safari can hang the first IndexedDB open after a cold start.
@@ -37,7 +42,7 @@ export default function App() {
     const finish = (s, err) => {
       if (settled) return;
       settled = true;
-      document.documentElement.dataset.theme = s.theme;
+      applyTheme(s.theme);
       document.documentElement.dataset.motion = s.motion ? 'on' : 'off';
       if (err) setBootError(String(err?.message || err));
       setReady(true);
@@ -52,6 +57,8 @@ export default function App() {
       .catch((e) => finish(DEFAULT_SETTINGS, e))
       .finally(() => clearTimeout(timer));
   }, []);
+
+  useShortcuts({ openPalette: () => setPaletteOpen(true), enabled: ready });
 
   // Directional slide between sections: left if moving to a later tab.
   const { section } = matchNav(location.pathname);
@@ -76,16 +83,23 @@ export default function App() {
         <div className={`page-inner page-slide-${dir}`}>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/stats" element={<Stats />} />
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/tasks/done" element={<TasksDone />} />
             <Route path="/habits" element={<HabitsToday />} />
             <Route path="/habits/month" element={<HabitsMonth />} />
+            <Route path="/habits/archived" element={<HabitsArchived />} />
             <Route path="/studio" element={<Studio />} />
             <Route path="/studio/archived" element={<StudioArchived />} />
-            <Route path="/studio/p/:id" element={<ProjectDetail />} />
+            {/* Same component as /studio: on a phone it becomes the page, on
+                a wide screen it selects into the pane beside the list. */}
+            <Route path="/studio/p/:id" element={<Studio />} />
             <Route path="/shop" element={<ShopStore />} />
             <Route path="/shop/inventory" element={<ShopInventory />} />
-            <Route path="/shop/ledger" element={<ShopLedger />} />
+            {/* The ledger lives under Settings now. Anything bookmarked or
+                linked at the old address still lands on it. */}
+            <Route path="/shop/ledger" element={<Navigate to="/settings/ledger" replace />} />
+            <Route path="/settings/ledger" element={<ShopLedger />} />
             <Route path="/tumbler" element={<Tumbler />} />
             <Route path="/tumbler/shelf" element={<TumblerShelf />} />
             <Route path="/tumbler/collection" element={<TumblerCollection />} />
@@ -94,7 +108,61 @@ export default function App() {
           </Routes>
         </div>
       </main>
-      <NavBar />
+      <NavBar onSearch={() => setPaletteOpen(true)} />
+      <Palette open={paletteOpen} close={() => setPaletteOpen(false)} />
+      <Toasts />
     </div>
   );
+}
+
+/*
+ * Keyboard shortcuts. Oskar's iPad lives on a Magic Keyboard, so these aren't
+ * a power-user extra — they're the primary input half the time.
+ *
+ * The guard that matters: a bare letter key must never fire while you're
+ * typing. Everything unmodified is therefore ignored when focus is in a field,
+ * which is why ⌘K exists alongside "/" — ⌘K still works mid-sentence in the
+ * add-a-task box.
+ */
+function useShortcuts({ openPalette, enabled }) {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!enabled) return;
+    function onKey(e) {
+      const el = document.activeElement;
+      const typing =
+        el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        openPalette();
+        return;
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey || typing) return;
+
+      if (e.key === '/') {
+        e.preventDefault();
+        openPalette();
+        return;
+      }
+      // 1–6 walk the nav in the order it's drawn, which is the order the rail
+      // shows — so the number is wherever your eye already is.
+      const digit = Number(e.key);
+      if (digit >= 1 && digit <= NAV.length) {
+        e.preventDefault();
+        navigate(sectionPath(NAV[digit - 1]));
+        return;
+      }
+      if (e.key === 'n') {
+        e.preventDefault();
+        // The timestamp is the point: navigating to /tasks when you're already
+        // there wouldn't re-run anything, and the purpose of the shortcut is
+        // to put the cursor in the box.
+        navigate('/tasks', { state: { focusAdd: Date.now() } });
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [openPalette, enabled, navigate]);
 }

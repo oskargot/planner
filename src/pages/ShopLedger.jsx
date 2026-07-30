@@ -38,6 +38,12 @@ export default function ShopLedger() {
 
   return (
     <>
+      {/* No nav section owns this page any more, so it carries its own way
+          back rather than relying on the bar to say where you are. */}
+      <Link className="back-link" to="/settings">
+        <Icon name="chevronLeft" size={14} /> Settings
+      </Link>
+
       <h1 className="page-title">
         <span className="accent-dot" style={{ background: 'var(--accent-5)' }} />
         Ledger
@@ -54,9 +60,6 @@ export default function ShopLedger() {
           Export JSON
         </button>
         <ImportButton />
-        <Link className="btn ghost" to="/settings">
-          Settings
-        </Link>
       </div>
 
       {showAdjust && <AdjustForm close={() => setShowAdjust(false)} />}

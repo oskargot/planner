@@ -86,6 +86,12 @@ function buildSeed() {
     ['Drink water', '💧'], ['Journal', '✏️'],
   ].map(([name, emoji], i) => ({ ...base, id: uid(`h${i}`), name, emoji, color: null, active: 1, sort_order: i }));
 
+  // One retired habit, so the Archived screen has something to show. Its
+  // entries stay in history and keep counting toward the days it was live.
+  const archivedHabits = [
+    { ...base, id: uid('ha0'), name: 'Duolingo', emoji: '🦉', color: null, active: 0, sort_order: 9 },
+  ];
+
   // Habit history with a plausible shape: mostly-good recent days, patchier
   // further back, so the heat map has an actual gradient to look at.
   const habit_entries = [];
@@ -101,6 +107,18 @@ function buildSeed() {
         habit_entries.push({ ...base, id: uid(`he${back}-${hi}`), habit_id: h.id, day: d });
         ledger.push({ ...base, id: uid(`l${led++}`), delta: 1, reason: 'habit', source_type: 'habits', source_id: h.id, day: d, note: null, created_at: now - back * DAY_MS });
       }
+    });
+  }
+
+  // History for the retired habit, so Archived can show what it was worth.
+  for (let back = 14; back < 30; back += 2) {
+    habit_entries.push({
+      ...base, id: uid(`hae${back}`), habit_id: archivedHabits[0].id, day: day(-back),
+    });
+    ledger.push({
+      ...base, id: uid(`l${led++}`), delta: 1, reason: 'habit', source_type: 'habits',
+      source_id: archivedHabits[0].id, day: day(-back), note: null,
+      created_at: now - back * DAY_MS,
     });
   }
 
@@ -164,7 +182,8 @@ function buildSeed() {
   ];
 
   return {
-    tasks: [...tasks, ...doneTasks], subtasks, habits, habit_entries, projects, milestones,
+    tasks: [...tasks, ...doneTasks], subtasks,
+    habits: [...habits, ...archivedHabits], habit_entries, projects, milestones,
     project_touches, shop_items, purchases, ledger,
     gems, tumbler_barrels, tumbler_ledger,
   };
@@ -173,12 +192,23 @@ function buildSeed() {
 const SEED = buildSeed();
 
 const SCREENS = [
-  ['home', '/'], ['tasks', '/tasks'], ['tasks-done', '/tasks/done'],
+  ['home', '/'], ['stats', '/stats'],
+  ['tasks', '/tasks'], ['tasks-done', '/tasks/done'],
   ['habits', '/habits'], ['habits-month', '/habits/month'],
-  ['studio', '/studio'], ['shop', '/shop'], ['shop-inventory', '/shop/inventory'],
-  ['shop-ledger', '/shop/ledger'], ['tumbler', '/tumbler'],
+  ['habits-archived', '/habits/archived'],
+  ['studio', '/studio'], ['studio-project', '/studio/p/seed-p0'],
+  ['shop', '/shop'], ['shop-inventory', '/shop/inventory'],
+  ['ledger', '/settings/ledger'], ['tumbler', '/tumbler'],
   ['tumbler-shelf', '/tumbler/shelf'], ['tumbler-collection', '/tumbler/collection'],
   ['settings', '/settings'],
+];
+
+// A sample in the dark theme too. Not every screen — the point is to catch a
+// token that never got a dark value, and the screens with the most furniture
+// (the shopfront, the shelves) are where that shows up first.
+const DARK_SCREENS = [
+  ['home', '/'], ['stats', '/stats'], ['tasks', '/tasks'],
+  ['shop', '/shop'], ['tumbler-shelf', '/tumbler/shelf'],
 ];
 
 const VIEWPORTS = [
@@ -217,6 +247,61 @@ for (const [vpName, viewport, dsf] of VIEWPORTS) {
     await page.waitForTimeout(500);
     await page.screenshot({ path: join(OUT, `${vpName}-${name}.png`) });
   }
+
+  // Two states that only exist after an interaction, so they can't be reached
+  // by URL like everything else: the palette, and a toast with its undo.
+  await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  await page.keyboard.press('Meta+k');
+  await page.waitForTimeout(300);
+  await page.keyboard.type('bass');
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: join(OUT, `${vpName}-palette.png`) });
+  await page.keyboard.press('Escape');
+
+  await page.goto(`http://localhost:${PORT}/tasks`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  await page.locator('.check').first().click();
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: join(OUT, `${vpName}-toast.png`) });
+
+  // Fusion, end to end. The seeded shelf has four grade-3 stones at these
+  // positions when sorted newest-first; picking three of them is the only way
+  // to see the bench, and clicking through to the reveal is the only way to
+  // know the whole path actually mints a stone.
+  await page.goto(`http://localhost:${PORT}/tumbler/shelf`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  for (const nth of [1, 4, 7]) await page.locator('.gem-slot').nth(nth).click();
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: join(OUT, `${vpName}-fuse.png`) });
+  await page.locator('.fuse-bar .btn.primary').click();
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: join(OUT, `${vpName}-fuse-reveal.png`) });
+
+  // Same device, lights off. The preference lives in meta (App re-applies it
+  // on boot and would otherwise overwrite anything set here), and is mirrored
+  // into localStorage the way theme.js does it — which is also the path that
+  // stops a dark launch from flashing white.
+  await page.evaluate(async () => {
+    localStorage.setItem('theme-pref', 'dark');
+    const dbh = await new Promise((res, rej) => {
+      const r = indexedDB.open('planner');
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+    await new Promise((res, rej) => {
+      const tx = dbh.transaction(['meta'], 'readwrite');
+      tx.objectStore('meta').put({ key: 'theme', value: 'dark', updated_at: Date.now() });
+      tx.oncomplete = res;
+      tx.onerror = () => rej(tx.error);
+    });
+  });
+  for (const [name, path] of DARK_SCREENS) {
+    await page.goto(`http://localhost:${PORT}${path}`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: join(OUT, `${vpName}-dark-${name}.png`) });
+  }
+
   await ctx.close();
 }
 

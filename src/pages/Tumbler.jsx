@@ -199,7 +199,7 @@ function Barrel({ slot, barrel, now, levels, onOpen }) {
  * gem row exists the moment the barrel is opened — so crushing a duplicate
  * costs nothing but the object itself.
  */
-function Reveal({ gem, close }) {
+export function Reveal({ gem, close }) {
   const [crushed, setCrushed] = useState(null);
   const species = SPECIES_BY_KEY[gem.species];
 

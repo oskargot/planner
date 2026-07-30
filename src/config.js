@@ -6,7 +6,16 @@ export const APP_NAME = 'Planner';
 // plus a route in App.jsx. Each section owns one of the six rainbow accents.
 // `icon` is a name in components/Icon.jsx, not an emoji — see the note there.
 export const NAV = [
-  { id: 'home', label: 'Home', icon: 'home', path: '/', accent: 1 },
+  {
+    // Home owns the section path '/', and Stats hangs off it rather than
+    // taking a seventh seat in the nav: it's a way of looking at what Home
+    // already shows, not another place to keep things.
+    id: 'home', label: 'Home', icon: 'home', path: '/', accent: 1,
+    children: [
+      { id: 'today', label: 'Today', path: '/' },
+      { id: 'stats', label: 'Stats', path: '/stats' },
+    ],
+  },
   {
     id: 'tasks', label: 'Tasks', icon: 'tasks', accent: 2,
     children: [
@@ -19,6 +28,9 @@ export const NAV = [
     children: [
       { id: 'today', label: 'Today', path: '/habits' },
       { id: 'month', label: 'Month', path: '/habits/month' },
+      // Archiving used to be a one-way door: the row vanished and there was
+      // no screen anywhere that could show it again.
+      { id: 'archived', label: 'Archived', path: '/habits/archived' },
     ],
   },
   {
@@ -29,11 +41,13 @@ export const NAV = [
     ],
   },
   {
+    // Ledger moved to Settings. The shop is the two screens you actually
+    // shop with; the ledger is an audit log, and it was the third tab you
+    // never wanted while browsing.
     id: 'shop', label: 'Shop', icon: 'shop', accent: 5,
     children: [
       { id: 'store', label: 'Store', path: '/shop' },
       { id: 'inventory', label: 'Inventory', path: '/shop/inventory' },
-      { id: 'ledger', label: 'Ledger', path: '/shop/ledger' },
     ],
   },
   // The tumbler runs on grit, not points — a separate economy on purpose, so

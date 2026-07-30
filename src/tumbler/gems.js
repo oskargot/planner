@@ -80,10 +80,17 @@ export function gemLabel(gem) {
  * odds — that is the entire economy of the game, so these numbers are the
  * balance knobs.
  */
+/*
+ * Retuned down from 2 / 6 / 14 after a few weeks of living with it: the early
+ * game was slow enough that a Quick cycle wasn't quick in any sense you'd
+ * notice, and the first upgrade was days away. The shape is unchanged — longer
+ * still means better, and the overnight cycle is still the one you start
+ * before bed.
+ */
 export const CYCLES = [
-  { key: 'quick',     name: 'Quick',     hours: 2,  quality: 0 },
-  { key: 'standard',  name: 'Standard',  hours: 6,  quality: 1 },
-  { key: 'overnight', name: 'Overnight', hours: 14, quality: 2 },
+  { key: 'quick',     name: 'Quick',     hours: 1,  quality: 0 },
+  { key: 'standard',  name: 'Standard',  hours: 4,  quality: 1 },
+  { key: 'overnight', name: 'Overnight', hours: 10, quality: 2 },
 ];
 
 export const CYCLES_BY_KEY = Object.fromEntries(CYCLES.map((c) => [c.key, c]));
@@ -131,6 +138,41 @@ export function rollGem(seed, { cycleKey, qualityLevel = 0 }) {
   const species = rollSpecies(next, power);
   const grade = rollGrade(next, power);
   return { seed, species, grade };
+}
+
+/*
+ * Fusion: three stones of one grade become one of the next grade up.
+ *
+ * It exists because the shelf had exactly one verb — crush — and every
+ * duplicate was therefore worth the same handful of grit as the last one.
+ * Fusion gives a pile of Clouded Jade somewhere to go that isn't the bin.
+ *
+ * The rule that makes it interesting rather than just arithmetic: the result's
+ * species is drawn from the three you put in. Feed it a mixed handful and you
+ * get a better stone of *something*; feed it three of a kind and you've aimed
+ * it — which is how you finally finish a column of the collection instead of
+ * waiting for the barrel to hand it to you. Three rare stones fuse into a rare
+ * one for the same reason, with no special case for it.
+ *
+ * Flawless is the ceiling; there's nothing above it to fuse into.
+ */
+export const FUSE_COUNT = 3;
+
+export function canFuse(gems) {
+  if (gems.length !== FUSE_COUNT) return false;
+  const grade = gems[0].grade;
+  if (grade >= GRADES.length - 1) return false;
+  return gems.every((g) => g.grade === grade);
+}
+
+export function fuseOutcome(seed, gems) {
+  const next = rng(seed);
+  next(); // burn one, same as rollGem
+  return {
+    seed,
+    species: gems[Math.floor(next() * gems.length)].species,
+    grade: Math.min(GRADES.length - 1, gems[0].grade + 1),
+  };
 }
 
 /*

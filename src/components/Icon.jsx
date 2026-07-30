@@ -177,6 +177,51 @@ const ICONS = {
       <path d="M12 16.6h.01" />
     </>
   ),
+  // An arrow curling back on itself — the undo in a toast.
+  undo: (
+    <>
+      <path d="M4.2 9.4h9.6a5.4 5.4 0 0 1 0 10.8H8.6" />
+      <path d="M7.8 5.2 3.6 9.4l4.2 4.2" />
+    </>
+  ),
+  search: (
+    <>
+      <circle cx="10.8" cy="10.8" r="6.4" />
+      <path d="m15.6 15.6 4.2 4.2" />
+    </>
+  ),
+  // Three bars of different heights: the stats section.
+  chart: (
+    <>
+      <path d="M4.2 19.8V13" />
+      <path d="M9.4 19.8V6.4" />
+      <path d="M14.6 19.8v-9.2" />
+      <path d="M19.8 19.8V4.2" />
+    </>
+  ),
+  // A lidded box — archived habits and paused projects.
+  archive: (
+    <>
+      <rect x="3.4" y="4.4" width="17.2" height="4.4" rx="1.4" />
+      <path d="M5.2 8.8v9.4a1.6 1.6 0 0 0 1.6 1.6h10.4a1.6 1.6 0 0 0 1.6-1.6V8.8" />
+      <path d="M10 12.6h4" />
+    </>
+  ),
+  // Two shapes converging into one: gem fusion.
+  fuse: (
+    <>
+      <path d="M7.6 3.9 4 8.2l3.6 4.3 3.6-4.3z" />
+      <path d="M16.4 3.9 12.8 8.2l3.6 4.3L20 8.2z" />
+      <path d="M12 14.6v5.6" />
+      <path d="M8.4 17.4 12 20.2l3.6-2.8" />
+    </>
+  ),
+  // Funnel: the task filters.
+  filter: (
+    <>
+      <path d="M3.8 5.2h16.4l-6.4 7.6v6l-3.6 1.8v-7.8z" />
+    </>
+  ),
 };
 
 export const ICON_NAMES = Object.keys(ICONS);

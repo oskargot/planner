@@ -1,9 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db.js';
-import { addShopItem, updateShopItem, deleteShopItem, purchaseItem } from '../db/actions.js';
+import {
+  addShopItem,
+  updateShopItem,
+  deleteShopItem,
+  restoreShopItem,
+  purchaseItem,
+  refundPurchase,
+  moveRow,
+} from '../db/actions.js';
 import { useBalance } from '../db/selectors.js';
 import { confettiBurst } from '../fx.js';
+import { showToast } from '../toast.js';
 import Icon from '../components/Icon.jsx';
 import { itemAccent } from '../components/ColorPicker.jsx';
 import useLongPress from '../useLongPress.js';
@@ -32,6 +41,52 @@ function chunk(items, size) {
   return out;
 }
 
+/*
+ * The awning, sized to fit.
+ *
+ * The canvas is a repeating six-band gradient and the valance is a mask with a
+ * matching scallop period, both of which were pinned at 28px. Nothing makes a
+ * screen 28px times a whole number wide, so the last band was always sliced
+ * mid-stripe and the last scallop cut off square — worse on the phone, where
+ * the awning is narrow enough that the missing scallop is a sixth of what you
+ * see.
+ *
+ * So the awning measures itself and picks the band width that divides its own
+ * width evenly, staying as close to the ideal as it can. Both the stripes and
+ * the scallops are derived from that one number, which is what keeps a scallop
+ * centred under each colour.
+ */
+const IDEAL_BAND = 28;
+
+function Awning() {
+  const ref = useRef(null);
+  const [band, setBand] = useState(IDEAL_BAND);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => {
+      const w = el.getBoundingClientRect().width;
+      if (!w) return;
+      // At least six bands, so the rainbow always makes it round once.
+      const bands = Math.max(6, Math.round(w / IDEAL_BAND));
+      setBand(w / bands);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div className="awning" ref={ref} style={{ '--awning-band': `${band}px` }}>
+      <span className="awning-title">
+        <Icon name="shop" size={18} /> open
+      </span>
+    </div>
+  );
+}
+
 export default function ShopStore() {
   const balance = useBalance();
   const [editing, setEditing] = useState(null); // null | 'new' | item
@@ -56,14 +111,14 @@ export default function ShopStore() {
 
       {/* The shopfront. Purely decorative — the page title above already says
           where you are, so a theme that flattens the stripes loses nothing. */}
-      <div className="awning">
-        <span className="awning-title">
-          <Icon name="shop" size={18} /> open
-        </span>
-      </div>
+      <Awning />
 
       {editing && (
-        <ItemForm item={editing === 'new' ? null : editing} close={() => setEditing(null)} />
+        <ItemForm
+          item={editing === 'new' ? null : editing}
+          items={items}
+          close={() => setEditing(null)}
+        />
       )}
 
       <div className="cabinet">
@@ -95,7 +150,9 @@ export default function ShopStore() {
           </button>
           {items.length > 0 && (
             <span className="longpress-hint">
-              <Icon name="pencil" size={12} /> hold an item to edit
+              <Icon name="pencil" size={12} />
+              <span className="hint-touch">hold an item to edit</span>
+              <span className="hint-pointer">right-click an item to edit</span>
             </span>
           )}
         </div>
@@ -113,8 +170,12 @@ function ShopItem({ item, accent, balance, onEdit }) {
   async function buy(e) {
     const btn = e.currentTarget;
     try {
-      await purchaseItem(item);
+      const purchase = await purchaseItem(item);
       confettiBurst(btn); // a purchase is a meaningful moment (§8)
+      // Spending is the one action here you can't repeat your way out of, so
+      // it gets the same take-back as everything else. The refund is a new
+      // positive ledger row, not a rubbed-out negative one.
+      showToast(`Bought ${item.name}`, { undo: () => refundPurchase(purchase) });
     } catch {
       /* raced below zero — the button state will catch up */
     }
@@ -175,21 +236,33 @@ function ShopItem({ item, accent, balance, onEdit }) {
           on the box now, and the foot is just the note. */}
       <div className="box-foot">
         {/* One line only, and the shortfall outranks the note — the full note
-            is a hold away in the edit sheet. */}
-        <div className="box-note" title={item.notes || undefined}>
-          {!soldOut && !affordable ? `${item.cost - balance} more` : item.notes}
-        </div>
+            is a hold away in the edit sheet. The spark is load-bearing: "9
+            more" on its own reads as nine more of the item. */}
+        {!soldOut && !affordable ? (
+          <div className="box-note short">
+            <Icon name="spark" size={11} />
+            {item.cost - balance} more
+          </div>
+        ) : (
+          <div className="box-note" title={item.notes || undefined}>
+            {item.notes}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function ItemForm({ item, close }) {
+function ItemForm({ item, items, close }) {
   const [name, setName] = useState(item?.name || '');
   const [cost, setCost] = useState(item?.cost ?? 20);
   const [notes, setNotes] = useState(item?.notes || '');
   const [imageUrl, setImageUrl] = useState(item?.image_url || '');
   const [soldOut, setSoldOut] = useState(!!item?.sold_out);
+
+  const index = item ? items.findIndex((i) => i.id === item.id) : -1;
+  const prev = index > 0 ? items[index - 1] : null;
+  const next = index >= 0 ? items[index + 1] : null;
 
   async function save() {
     if (!name.trim() || !(Number(cost) > 0)) return;
@@ -227,14 +300,39 @@ function ItemForm({ item, close }) {
         <input type="checkbox" checked={soldOut} onChange={(e) => setSoldOut(e.target.checked)} />
         Sold out (visible but unbuyable)
       </label>
+      {item && (
+        <div className="row">
+          {/* Shelf position, since where a box sits on the shelves is half of
+              what makes the store feel like a store. */}
+          <span className="muted small grow">Shelf position</span>
+          <button
+            className="icon-btn"
+            disabled={!prev}
+            onClick={() => moveRow('shop_items', item, prev, true)}
+            aria-label="Move earlier"
+          >
+            <Icon name="arrowUp" size={16} />
+          </button>
+          <button
+            className="icon-btn"
+            disabled={!next}
+            onClick={() => moveRow('shop_items', item, next, false)}
+            aria-label="Move later"
+          >
+            <Icon name="arrowDown" size={16} />
+          </button>
+        </div>
+      )}
       <div className="row spread">
         {item ? (
           <button
             className="btn danger"
-            onClick={() => {
-              if (confirm(`Delete "${item.name}"? Past purchases keep their history.`)) {
-                deleteShopItem(item.id).then(close);
-              }
+            onClick={async () => {
+              await deleteShopItem(item.id);
+              close();
+              showToast(`Removed ${item.name} — past purchases keep their history`, {
+                undo: () => restoreShopItem(item.id),
+              });
             }}
           >
             Delete
