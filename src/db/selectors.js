@@ -230,7 +230,7 @@ export function useStats() {
     // ---- ledger ----
     const ledger = (await db.ledger.toArray()).filter((r) => !r.deleted);
     const perDay = new Map(window.map((d) => [d, { day: d, earned: 0, spent: 0 }]));
-    const bySource = { task: 0, habit: 0, project: 0, adjust: 0 };
+    const bySource = { task: 0, habit: 0, project: 0, discovery: 0, adjust: 0 };
     let lifetimeEarned = 0;
     let lifetimeSpent = 0;
     let balance = 0;

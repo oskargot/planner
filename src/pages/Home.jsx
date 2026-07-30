@@ -36,7 +36,9 @@ export default function Home() {
       <header className="row spread home-header">
         <h1 className="display wordmark">{APP_NAME}</h1>
         <div className="row" style={{ gap: 'var(--space-3)' }}>
-          <Link to="/settings/ledger" className="header-points" aria-label="Points">
+          {/* Stats rather than the ledger: tapping the number is nearly always
+              "how am I doing", not "what was that one transaction". */}
+          <Link to="/settings/stats" className="header-points" aria-label="Points">
             <div className="balance">
               <Icon name="spark" size={18} /> {balance ?? '…'}
             </div>

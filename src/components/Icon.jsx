@@ -216,6 +216,14 @@ const ICONS = {
       <path d="M8.4 17.4 12 20.2l3.6-2.8" />
     </>
   ),
+  // A stone that didn't survive the pick — three chips where a gem was.
+  shards: (
+    <>
+      <path d="M6.2 4.6 3.4 9.1l4.3 4.6 3.1-4.8z" />
+      <path d="M15.4 3.8 12.9 7.3l3 3.4 2.9-3.9z" />
+      <path d="m10.4 14.6-2.1 5.6 6.2-1.6-1.6-4z" />
+    </>
+  ),
   // Funnel: the task filters.
   filter: (
     <>

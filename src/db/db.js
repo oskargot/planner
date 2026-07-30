@@ -31,6 +31,14 @@ db.version(3).stores({
   subtasks: 'id, updated_at, task_id, sort_order',
 });
 
+// v4 adds the mine. One row per 16×16 chunk of dug ground, not per cell — the
+// board is infinite, and a row per cell would be thousands of synced rows to
+// say one bit each. The id is derived (see db/mine.js), so there's no reason
+// to index the coordinates: every lookup is a primary-key get.
+db.version(4).stores({
+  mine_chunks: 'id, updated_at',
+});
+
 // Tables that participate in sync (meta is handled specially — only
 // day_rollover_hour syncs; sync_cursor/theme/motion stay local).
 export const SYNC_TABLES = [
@@ -47,9 +55,13 @@ export const SYNC_TABLES = [
   'tumbler_barrels',
   'gems',
   'tumbler_ledger',
+  'mine_chunks',
 ];
 
-export const SYNCED_META_KEYS = ['day_rollover_hour'];
+// mine_seed can't be derived from anything the way the prestige level can, so
+// it has to sync as meta and takes LWW. Worst case if two devices ever
+// disagree: an unfamiliar board. No stone and no grit is at risk either way.
+export const SYNCED_META_KEYS = ['day_rollover_hour', 'mine_seed'];
 
 // crypto.randomUUID needs Safari 15.4+; fall back to getRandomValues.
 export const uuid = () => {
@@ -75,6 +87,20 @@ function wrote() {
 export async function insertRow(table, fields) {
   const now = Date.now();
   const row = { id: uuid(), created_at: now, updated_at: now, deleted: 0, ...fields };
+  await db.table(table).put(row);
+  wrote();
+  return row;
+}
+
+/*
+ * Same as insertRow, but with a caller-supplied id. Only for tables whose ids
+ * are DERIVED rather than random — currently just mine_chunks, where two
+ * devices digging the same patch offline have to produce the same row id so
+ * LWW merges them instead of minting two rows for one chunk.
+ */
+export async function insertRowWithId(table, id, fields) {
+  const now = Date.now();
+  const row = { id, created_at: now, updated_at: now, deleted: 0, ...fields };
   await db.table(table).put(row);
   wrote();
   return row;

@@ -3,6 +3,9 @@
 
 import { db, insertRow, updateRow, softDelete } from './db.js';
 import { logicalDay } from './time.js';
+// Pure gem naming only — this reaches into tumbler/gems.js, never into
+// db/tumbler.js, so the points side still can't touch grit.
+import { SPECIES_BY_KEY, gemLabel } from '../tumbler/gems.js';
 
 export const SIZE_POINTS = { S: 3, M: 5, L: 8 };
 
@@ -335,6 +338,55 @@ export async function refundPurchase(purchase) {
 
 export async function adjustPoints(delta, note) {
   return addLedger({ delta, reason: 'adjust', day: logicalDay(), note });
+}
+
+// ---- discoveries ----
+
+/*
+ * The one place the rock economy pays points, and the only breach in a wall
+ * that is otherwise still absolute: no stone can be spent in the shop, no task
+ * earns grit, and grit still buys nothing but rocks.
+ *
+ * What makes this breach safe is that it pays for DISCOVERIES, not for stones.
+ * There are 45 squares in the collection and each one pays exactly once, ever.
+ * So it can't be farmed, it can't be optimised, and — the thing that actually
+ * mattered — you can't fall behind on it. The tumbler's whole design rests on
+ * skipping it being free, and a bounty you can still collect in six months is
+ * one you are never late for. A per-stone rate would have made not tumbling
+ * cost you points, which is the version that turns the game into a chore.
+ *
+ * Scaled by grade because a Flawless is a genuine event, doubled for rare
+ * species for the same reason.
+ */
+export const DISCOVERY_POINTS = [2, 3, 6, 12, 25];
+
+export async function awardDiscovery(gem) {
+  // The square, not the stone: two Clear Jades are one discovery.
+  const key = `${gem.species}:${gem.grade}`;
+  const paid = await db.ledger
+    .filter((r) => !r.deleted && r.reason === 'discovery' && r.source_id === key)
+    .first();
+  // Idempotent against its own ledger row rather than against the gems table,
+  // so re-minting a stone you already have pays nothing and a sync that brings
+  // the other device's award across stops this one from paying twice. Two
+  // devices discovering the same square while both offline would double-pay
+  // once; that's a handful of points on a 45-square game, and the alternative
+  // is a uniqueness constraint on an append-only table.
+  if (paid) return 0;
+
+  const species = SPECIES_BY_KEY[gem.species];
+  const points = (DISCOVERY_POINTS[gem.grade] ?? 0) * (species?.rare ? 2 : 1);
+  if (!points) return 0;
+
+  await addLedger({
+    delta: points,
+    reason: 'discovery',
+    sourceType: 'gems',
+    sourceId: key,
+    day: logicalDay(),
+    note: `found a ${gemLabel(gem)}`,
+  });
+  return points;
 }
 
 // ---- ordering ----

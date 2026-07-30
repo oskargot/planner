@@ -16,6 +16,10 @@
 
 import { db, insertRow, updateRow, softDelete, uuid } from './db.js';
 import { CYCLES_BY_KEY, rollGem, gritValue, canFuse, fuseOutcome } from '../tumbler/gems.js';
+// The one thread between the two economies, and it runs in one direction:
+// finding something new pays points. Nothing here ever reads the points
+// ledger, and nothing in actions.js ever writes grit.
+import { awardDiscovery } from './actions.js';
 
 const HOUR_MS = 3600000;
 
@@ -48,6 +52,25 @@ export const UPGRADES = {
     base: 0,
     max: 5,
   },
+  /*
+   * Prestige, and the only upgrade that takes something away. Buying it
+   * rerolls the mine's world and forgets everywhere you've dug, in exchange
+   * for permanently richer and better ground.
+   *
+   * It's counted from tumbler_ledger rows like every other level, which is
+   * what lets the mine's density be derived rather than stored — the seed is
+   * the only part that has to be meta.
+   *
+   * Nothing you own is at stake: the collection, the shelf and the grit all
+   * survive. It resets the ground, not your work.
+   */
+  prestige: {
+    name: 'Deeper claim',
+    blurb: 'Rerolls the mine into richer ground. Forgets where you have dug.',
+    costs: [200, 500, 1100, 2200, 4000],
+    base: 0,
+    max: 5,
+  },
 };
 
 export const BARREL_MAX = UPGRADES.barrels.base + UPGRADES.barrels.max;
@@ -71,7 +94,7 @@ export function upgradeCost(key, level) {
 export function summarise(ledgerRows) {
   const live = ledgerRows.filter((r) => !r.deleted);
   const grit = live.reduce((sum, r) => sum + r.delta, 0);
-  const levels = { barrels: 0, speed: 0, quality: 0 };
+  const levels = { barrels: 0, speed: 0, quality: 0, prestige: 0 };
   for (const r of live) {
     if (r.upgrade_key && levels[r.upgrade_key] !== undefined) levels[r.upgrade_key]++;
   }
@@ -108,13 +131,36 @@ export function formatRemaining(ms) {
 
 // ---- writing ----
 
-async function addGrit(delta, reason, { note = null, upgradeKey = null } = {}) {
+/*
+ * The one function that writes tumbler_ledger. db/mine.js spends and earns
+ * grit through it rather than inserting rows of its own, so "grit only moves
+ * here" survives the mine existing.
+ */
+export async function addGrit(delta, reason, { note = null, upgradeKey = null } = {}) {
   return insertRow('tumbler_ledger', {
     delta,
     reason,
     upgrade_key: upgradeKey,
     note,
   });
+}
+
+/*
+ * The one function that mints a gem — barrels, fusion and the mine all come
+ * through here.
+ *
+ * That's what makes the discovery bounty safe to add: filling a new square in
+ * the collection pays points, and there is exactly one place in the app where
+ * a square can be filled. Three call sites each remembering to award it would
+ * be three chances to forget, and one of them would be the interesting one.
+ */
+export async function mintGem(fields) {
+  const gem = await insertRow('gems', fields);
+  // Carried back on the returned object rather than stored: the ledger row is
+  // the record, this is just so the reveal can say "new find" in the moment
+  // it happens. Nothing reads it back later.
+  const discovered = await awardDiscovery(gem);
+  return { ...gem, discovered };
 }
 
 // Barrels are addressed by slot, and rows are created lazily the first time a
@@ -163,7 +209,7 @@ export async function collectBarrel(slot) {
   const barrel = await barrelForSlot(slot);
   if (!barrel || barrelState(barrel) !== 'ready') return null;
 
-  const gem = await insertRow('gems', {
+  const gem = await mintGem({
     seed: barrel.seed,
     species: barrel.species,
     grade: barrel.grade,
@@ -225,7 +271,7 @@ export async function fuseGems(gems) {
   const seed = uuid();
   const outcome = fuseOutcome(seed, fresh);
   for (const row of fresh) await softDelete('gems', row.id);
-  return insertRow('gems', {
+  return mintGem({
     seed,
     species: outcome.species,
     grade: outcome.grade,

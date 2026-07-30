@@ -14,6 +14,8 @@ const REASON_ICON = {
   project: 'studio',
   purchase: 'shop',
   adjust: 'sliders',
+  // The one row type the rock economy can write. See awardDiscovery.
+  discovery: 'gem',
 };
 
 export default function ShopLedger() {
