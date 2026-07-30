@@ -30,6 +30,7 @@ ensureColumn('habits', 'color', 'color TEXT');
 // Column lists drive the generated upserts; order matters only for VALUES.
 const TABLES = {
   tasks: ['id', 'title', 'size', 'notes', 'color', 'done_at', 'sort_order', 'created_at', 'updated_at', 'deleted'],
+  subtasks: ['id', 'task_id', 'title', 'done_at', 'sort_order', 'created_at', 'updated_at', 'deleted'],
   habits: ['id', 'name', 'emoji', 'color', 'active', 'sort_order', 'created_at', 'updated_at', 'deleted'],
   habit_entries: ['id', 'habit_id', 'day', 'created_at', 'updated_at', 'deleted'],
   projects: ['id', 'name', 'description', 'color', 'status', 'sort_order', 'created_at', 'updated_at', 'deleted'],

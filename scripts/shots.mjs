@@ -62,6 +62,20 @@ function buildSeed() {
     ['Return the library books', 'S'],
   ].map(([title, size], i) => ({ ...base, id: uid(`t${i}`), title, size, notes: null, color: null, done_at: null, sort_order: i }));
 
+  // A couple of tasks carry a checklist, so the collapsed count chip and the
+  // open drawer both have something to show.
+  const subtasks = [
+    [2, 'Outline the three acts', true],
+    [2, 'Block out the prologue', true],
+    [2, 'Write ADAM\u2019s first scene', false],
+    [2, 'Pick the demo build target', false],
+    [4, 'Buy archive boxes', true],
+    [4, 'Label by year', false],
+  ].map(([ti, title, done], i) => ({
+    ...base, id: uid(`st${i}`), task_id: uid(`t${ti}`), title,
+    done_at: done ? now - i * 3600000 : null, sort_order: i,
+  }));
+
   const doneTasks = [
     ['Water everything', 'S'],
     ['Pay the internet bill', 'M'],
@@ -150,7 +164,7 @@ function buildSeed() {
   ];
 
   return {
-    tasks: [...tasks, ...doneTasks], habits, habit_entries, projects, milestones,
+    tasks: [...tasks, ...doneTasks], subtasks, habits, habit_entries, projects, milestones,
     project_touches, shop_items, purchases, ledger,
     gems, tumbler_barrels, tumbler_ledger,
   };

@@ -15,6 +15,22 @@ CREATE TABLE IF NOT EXISTS tasks (
 );
 CREATE INDEX IF NOT EXISTS idx_tasks_updated ON tasks(updated_at);
 
+-- A checklist inside a task. Worth 0 points, exactly like milestones: these
+-- are structure, and paying for them would make "one task, ten subtasks" the
+-- cheapest way to farm the ledger.
+CREATE TABLE IF NOT EXISTS subtasks (
+  id          TEXT PRIMARY KEY,
+  task_id     TEXT NOT NULL,
+  title       TEXT NOT NULL,
+  done_at     INTEGER,
+  sort_order  REAL NOT NULL DEFAULT 0,
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  deleted     INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_subtasks_task ON subtasks(task_id);
+CREATE INDEX IF NOT EXISTS idx_subtasks_updated ON subtasks(updated_at);
+
 CREATE TABLE IF NOT EXISTS habits (
   id          TEXT PRIMARY KEY,
   name        TEXT NOT NULL,

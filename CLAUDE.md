@@ -86,7 +86,8 @@ src/
   db/
     time.js          logicalDay() and ALL date math — never elsewhere
     db.js            Dexie schema, insertRow/updateRow/softDelete, meta
-    actions.js       every POINTS mutation; only place `ledger` is written
+    actions.js       every POINTS mutation (tasks, subtasks, habits,
+                     projects, shop); only place `ledger` is written
     tumbler.js       every GRIT mutation; only place `tumbler_ledger` is
                      written. Never touches points, and vice versa.
     selectors.js     balance, earned-today, heat ratios, staleness,
@@ -121,7 +122,9 @@ scripts/
   other side. `tumbler_ledger` follows the same append-only rule — the grit
   balance AND the upgrade levels are both derived from its rows, because a
   plain counter synced LWW loses spend when two devices are offline.
-- **Milestones are worth 0 points** (anti-point-farming, deliberate).
+- **Milestones and subtasks are worth 0 points** (anti-point-farming,
+  deliberate). Both are structure inside something else; paying per subtask
+  would make "one task, ten subtasks" the cheapest way to farm the ledger.
 - **Purchases blocked when cost > balance**; only `adjust` may go negative.
 - **`day` is a local YYYY-MM-DD string** computed by `logicalDay()` with a
   configurable rollover hour (default 04:00, synced meta
@@ -148,6 +151,11 @@ scripts/
   end), not today's count — imports must backdate habit `created_at`.
 - **No recurring tasks, no task↔project links, no login, no due dates** —
   deliberate v1 non-goals; don't add hooks for them.
+- **On a task row, tap opens its subtask drawer and hold opens the editor.**
+  A completed long press also fires a click on release, so the tap handler
+  checks `consumedRef` from `useLongPress` or the drawer opens behind the
+  editor. One drawer open at a time — the open id lives on the list, not the
+  row, because opening one closes another.
 - **Editing is a long press, never a visible control.** Shop boxes, task rows,
   habit rows and shelf gems all use `useLongPress`; a primary action inside a
   long-press target (checkbox, price tag) must `stopPropagation` on
@@ -166,6 +174,10 @@ scripts/
   accent system, not a background. The page is a faintly cool off-white — it
   was warm cream through v1 and the whole app read as sepia; do not drift it
   back toward yellow.
+- The tap ripple is TWO thin rings, the second delayed 110ms, over a RADIAL
+  rainbow: each ring's mask radius decides which band of the spectrum it picks
+  up, so the two come out different colours from one gradient. That's why the
+  masks sit at different radii — it isn't only about the stagger.
 - Motion (confetti, floating +N points, checkbox overshoot, the rainbow tap
   ripple) is in `fx.js`, always behind `prefers-reduced-motion` AND the
   settings toggle (`data-motion` on `<html>`). The tap ripple is one
@@ -235,13 +247,13 @@ odds. If a change would create a reason to feel late, it's the wrong change.
   bubble variants were the runners-up if he wants to swap.
 - Left rail appears at ≥900px, so iPad portrait gets it too; Oskar hasn't
   confirmed whether portrait should keep the bottom bar instead.
-- The rail is two columns: sections in a fixed icon column, the active
-  section's sub-pages in their own column beside it — the phone's bottom bar
-  and sub-row, stood on end. They used to nest, which meant selecting a
-  section with three sub-pages shoved every section below it down the rail.
-  The sub-column keeps its width when empty (Home) so the content area doesn't
-  slide sideways. Its items are centred rather than aligned to their parent
-  icon; ask before changing that, it was a judgement call.
+- The rail is a fixed icon column plus a 52px gutter the sub-page tabs render
+  into, absolutely positioned beside the section they belong to and centred on
+  it. Their labels are `writing-mode: vertical-rl` — that's what makes them
+  fit, since a horizontal "Collection" needed a 116px panel of its own. Out of
+  flow on purpose: the section icons must never move. Note `.nav-rail` carries
+  no `overflow` property, because a non-visible overflow on either axis forces
+  the other to clip and would slice the sub-tabs off.
 - The page bloom needs its fade-to-page-color layer in `base.css`. It's a
   165deg gradient in a wide short tile, so its stops don't line up with the
   tile's bottom edge and it left a faint horizontal seam across every page.

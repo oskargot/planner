@@ -83,7 +83,42 @@ export async function deleteTask(task) {
   if (task.done_at) {
     await reverseSource(task.id, 'tasks', 'task', logicalDay(), `deleted: ${task.title}`);
   }
+  // Tombstone the children too, or they sync back as orphans that nothing
+  // renders and nothing can ever reach to delete.
+  const kids = await db.subtasks.where('task_id').equals(task.id).toArray();
+  for (const k of kids) {
+    if (!k.deleted) await softDelete('subtasks', k.id);
+  }
   await softDelete('tasks', task.id);
+}
+
+// ---- subtasks ----
+//
+// Worth 0 points, exactly like milestones (§5.1). They're structure inside a
+// task, and paying per subtask would make "one task, ten subtasks" the
+// cheapest way to farm the ledger. Nothing in this section writes to `ledger`.
+
+export async function addSubtask(taskId, title) {
+  const rows = await db.subtasks.where('task_id').equals(taskId).toArray();
+  const max = Math.max(0, ...rows.map((s) => s.sort_order));
+  return insertRow('subtasks', {
+    task_id: taskId,
+    title,
+    done_at: null,
+    sort_order: max + 1,
+  });
+}
+
+export async function toggleSubtask(sub) {
+  await updateRow('subtasks', sub.id, { done_at: sub.done_at ? null : Date.now() });
+}
+
+export async function updateSubtask(id, fields) {
+  await updateRow('subtasks', id, fields);
+}
+
+export async function deleteSubtask(id) {
+  await softDelete('subtasks', id);
 }
 
 // ---- habits ----
