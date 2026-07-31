@@ -13,7 +13,7 @@ import {
   staleness,
 } from '../db/selectors.js';
 import { greeting, flavorLine } from '../greeting.js';
-import { barrelState, remainingMs, formatRemaining } from '../db/tumbler.js';
+import { barrelState, barrelsBySlot, remainingMs, formatRemaining } from '../db/tumbler.js';
 import { useTumbler } from './Tumbler.jsx';
 import { floatPoints, confettiBurst } from '../fx.js';
 import { APP_NAME } from '../config.js';
@@ -274,7 +274,7 @@ function TumblerCard() {
     return () => clearInterval(t);
   }, []);
 
-  const bySlot = new Map(barrels.map((b) => [b.slot, b]));
+  const bySlot = barrelsBySlot(barrels, now);
   const slots = Array.from({ length: barrelCount }, (_, i) => i);
   const ready = slots.filter((s) => barrelState(bySlot.get(s), now) === 'ready').length;
 

@@ -163,12 +163,59 @@ export async function mintGem(fields) {
   return { ...gem, discovered };
 }
 
-// Barrels are addressed by slot, and rows are created lazily the first time a
-// slot is used — so buying a barrel is only a ledger row, with no table to
-// keep in step.
+/*
+ * Barrels are addressed by slot, and rows are created lazily the first time a
+ * slot is used — so buying a barrel is only a ledger row, with no table to
+ * keep in step. The lazy creation means two devices loading the same slot
+ * offline each mint a row for it, and both survive the sync — random ids
+ * on purpose, because merging them by a derived id (the mine_chunks trick)
+ * would LWW away one of two decided stones.
+ *
+ * So a slot can hold several live rows, and every reader has to agree on
+ * which one the slot *means* — the bug this ranking fixed was the display
+ * picking one row while collectBarrel opened another, leaving a "Finished"
+ * barrel that could never be cleared. Ready beats running beats empty, ties
+ * go to the lowest id: deterministic, so the phone and the iPad pick the
+ * same row, and a stone hidden behind the canonical one surfaces the moment
+ * it's opened instead of being lost.
+ */
+function barrelRank(b, now) {
+  const state = barrelState(b, now);
+  return state === 'ready' ? 0 : state === 'running' ? 1 : 2;
+}
+
+export function barrelsBySlot(rows, now = Date.now()) {
+  const bySlot = new Map();
+  for (const b of rows) {
+    if (b.deleted) continue;
+    const cur = bySlot.get(b.slot);
+    if (
+      !cur ||
+      barrelRank(b, now) < barrelRank(cur, now) ||
+      (barrelRank(b, now) === barrelRank(cur, now) && b.id < cur.id)
+    ) {
+      bySlot.set(b.slot, b);
+    }
+  }
+  return bySlot;
+}
+
 export async function barrelForSlot(slot) {
   const rows = await db.tumbler_barrels.where('slot').equals(slot).toArray();
-  return rows.find((r) => !r.deleted) ?? null;
+  return barrelsBySlot(rows).get(slot) ?? null;
+}
+
+// An empty duplicate holds nothing — no stone, no grit — so it can be
+// tombstoned freely; started rows are never touched. Slots converge back to
+// one live row as barrels get loaded and opened.
+async function pruneEmptyDuplicates(slot) {
+  const rows = (await db.tumbler_barrels.where('slot').equals(slot).toArray()).filter(
+    (r) => !r.deleted
+  );
+  if (rows.length <= 1) return;
+  const empties = rows.filter((r) => !r.started_at).sort((a, b) => (a.id < b.id ? -1 : 1));
+  const keep = rows.length > empties.length ? 0 : 1;
+  for (const r of empties.slice(keep)) await softDelete('tumbler_barrels', r.id);
 }
 
 /*
@@ -195,6 +242,7 @@ export async function startBarrel(slot, cycleKey, { speedLevel, qualityLevel }) 
   };
   if (existing) {
     await updateRow('tumbler_barrels', existing.id, fields);
+    await pruneEmptyDuplicates(slot);
     return { ...existing, ...fields };
   }
   return insertRow('tumbler_barrels', fields);
@@ -224,6 +272,7 @@ export async function collectBarrel(slot) {
     cycle_key: null,
     collected_at: Date.now(),
   });
+  await pruneEmptyDuplicates(slot);
   return gem;
 }
 
