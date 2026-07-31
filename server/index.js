@@ -33,6 +33,8 @@ const TABLES = {
   subtasks: ['id', 'task_id', 'title', 'done_at', 'sort_order', 'created_at', 'updated_at', 'deleted'],
   habits: ['id', 'name', 'emoji', 'color', 'active', 'sort_order', 'created_at', 'updated_at', 'deleted'],
   habit_entries: ['id', 'habit_id', 'day', 'created_at', 'updated_at', 'deleted'],
+  chores: ['id', 'name', 'emoji', 'color', 'size', 'interval_days', 'sort_order', 'created_at', 'updated_at', 'deleted'],
+  chore_entries: ['id', 'chore_id', 'day', 'created_at', 'updated_at', 'deleted'],
   projects: ['id', 'name', 'description', 'color', 'status', 'sort_order', 'created_at', 'updated_at', 'deleted'],
   milestones: ['id', 'project_id', 'title', 'done_at', 'sort_order', 'created_at', 'updated_at', 'deleted'],
   project_touches: ['id', 'project_id', 'day', 'created_at', 'updated_at', 'deleted'],
@@ -90,6 +92,11 @@ const dayConflict = {
     find: db.prepare('SELECT * FROM project_touches WHERE project_id = ? AND day = ?'),
     update: db.prepare('UPDATE project_touches SET deleted = @deleted, updated_at = @updated_at WHERE project_id = @project_id AND day = @day AND updated_at <= @updated_at'),
     keys: ['project_id', 'day'],
+  },
+  chore_entries: {
+    find: db.prepare('SELECT * FROM chore_entries WHERE chore_id = ? AND day = ?'),
+    update: db.prepare('UPDATE chore_entries SET deleted = @deleted, updated_at = @updated_at WHERE chore_id = @chore_id AND day = @day AND updated_at <= @updated_at'),
+    keys: ['chore_id', 'day'],
   },
 };
 

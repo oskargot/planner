@@ -230,6 +230,16 @@ const ICONS = {
       <path d="M3.8 5.2h16.4l-6.4 7.6v6l-3.6 1.8v-7.8z" />
     </>
   ),
+  // A broom: the chores tab. Handle to the upper right, head sweeping the
+  // lower left, two bristle strokes so it reads at 22px.
+  broom: (
+    <>
+      <path d="M19.9 4.1 12.8 11.2" />
+      <path d="M12.8 11.2l2.1 2.1c-2.1 3.3-5.5 5.4-10.1 5.9.5-4.6 2.6-8 5.9-10.1Z" />
+      <path d="m8.1 15.9 1.7 1.7" />
+      <path d="m11 13.4 1.5 1.5" />
+    </>
+  ),
 };
 
 export const ICON_NAMES = Object.keys(ICONS);

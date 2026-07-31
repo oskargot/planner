@@ -39,6 +39,13 @@ db.version(4).stores({
   mine_chunks: 'id, updated_at',
 });
 
+// v5 adds chores — recurring quest-like work on a cooldown, not a schedule.
+// Entries mirror habit_entries (day-scoped, unique per chore per day).
+db.version(5).stores({
+  chores: 'id, updated_at, sort_order',
+  chore_entries: 'id, updated_at, day, [chore_id+day]',
+});
+
 // Tables that participate in sync (meta is handled specially — only
 // day_rollover_hour syncs; sync_cursor/theme/motion stay local).
 export const SYNC_TABLES = [
@@ -46,6 +53,8 @@ export const SYNC_TABLES = [
   'subtasks',
   'habits',
   'habit_entries',
+  'chores',
+  'chore_entries',
   'projects',
   'milestones',
   'project_touches',

@@ -59,6 +59,46 @@ export async function habitDayStats(days) {
   return byDay;
 }
 
+/*
+ * Chore readiness. A chore is on a cooldown, never a schedule: doing it
+ * starts a rest of interval_days, and when the rest is over it is simply
+ * "ready" again — there is no third state after ready, no matter how long it
+ * sits. That asymmetry is deliberate and matches the barrels: a chore can be
+ * ready, it can never be late.
+ *
+ *   ready   — never done, or rested for its full interval
+ *   done    — checked today (still uncheckable, like a habit)
+ *   resting — done recently; daysLeft says when it comes back
+ */
+export function choreStatus(chore, lastDay, today = logicalDay()) {
+  if (!lastDay) return { state: 'ready', since: null };
+  if (lastDay === today) return { state: 'done', since: 0 };
+  const since = daysBetween(lastDay, today);
+  if (since >= chore.interval_days) return { state: 'ready', since };
+  return { state: 'resting', since, daysLeft: chore.interval_days - since };
+}
+
+// Latest live entry day per chore — the one fact readiness derives from.
+export function lastDoneByChore(entries) {
+  const last = new Map();
+  for (const e of entries) {
+    if (e.deleted) continue;
+    if (!last.has(e.chore_id) || e.day > last.get(e.chore_id)) last.set(e.chore_id, e.day);
+  }
+  return last;
+}
+
+export function useChores() {
+  const chores = useLiveQuery(
+    () => db.chores.filter((c) => !c.deleted).sortBy('sort_order'),
+    [],
+    []
+  );
+  const entries = useLiveQuery(() => db.chore_entries.toArray(), [], []);
+  const lastDone = lastDoneByChore(entries);
+  return { chores, lastDone };
+}
+
 // Map a ratio onto the theme's 7-stop heat ramp.
 export function heatVar(ratio, done) {
   if (!done) return 'var(--heat-0)';
@@ -93,6 +133,14 @@ export function useGreetingState() {
     }
 
     const tasksOpen = (await db.tasks.toArray()).filter((t) => !t.deleted && !t.done_at).length;
+
+    // Chores ready to pick up again (or never yet done). Done-today and
+    // resting ones don't count — the greeting only mentions what's actionable.
+    const choreRows = (await db.chores.toArray()).filter((c) => !c.deleted);
+    const lastDone = lastDoneByChore(await db.chore_entries.toArray());
+    const choresReady = choreRows.filter(
+      (c) => choreStatus(c, lastDone.get(c.id), today).state === 'ready'
+    ).length;
 
     let balance = 0;
     let earnedToday = 0;
@@ -142,6 +190,7 @@ export function useGreetingState() {
       habitsDone: todayIds.size,
       streak,
       tasksOpen,
+      choresReady,
       earnedToday,
       balance,
       stalest,
@@ -231,7 +280,7 @@ export function useStats() {
     // ---- ledger ----
     const ledger = (await db.ledger.toArray()).filter((r) => !r.deleted);
     const perDay = new Map(window.map((d) => [d, { day: d, earned: 0, spent: 0 }]));
-    const bySource = { task: 0, habit: 0, project: 0, discovery: 0, adjust: 0 };
+    const bySource = { task: 0, habit: 0, chore: 0, project: 0, discovery: 0, adjust: 0 };
     let lifetimeEarned = 0;
     let lifetimeSpent = 0;
     let balance = 0;

@@ -86,6 +86,29 @@ function buildSeed() {
     ['Drink water', '💧'], ['Journal', '✏️'],
   ].map(([name, emoji], i) => ({ ...base, id: uid(`h${i}`), name, emoji, color: null, active: 1, sort_order: i }));
 
+  // Chores in all three states: ready (never done / rested out), done today,
+  // and resting — so the page shows both groups and Home shows its card.
+  const chores = [
+    ['Clean the bathroom', '🛁', 'M', 7],
+    ['Water the plants', '🪴', 'S', 4],
+    ['Change the bedsheets', '🛏️', 'S', 10],
+    ['Clear the downloads folder', '🗂️', 'S', 14],
+    ['Descale the kettle', '☕', 'S', 30],
+  ].map(([name, emoji, size, interval_days], i) => ({
+    ...base, id: uid(`c${i}`), name, emoji, color: null, size, interval_days, sort_order: i,
+  }));
+  const chore_entries = [
+    // c0 done 9 days ago on a 7-day interval → ready again.
+    { ...base, id: uid('ce0'), chore_id: uid('c0'), day: day(-9) },
+    // c1 done today → checked row at the top.
+    { ...base, id: uid('ce1'), chore_id: uid('c1'), day: day(0) },
+    // c2 done 3 days into a 10-day rest → resting, back in 7d.
+    { ...base, id: uid('ce2'), chore_id: uid('c2'), day: day(-3) },
+    // c3 done 13 of 14 days ago → resting, back tomorrow.
+    { ...base, id: uid('ce3'), chore_id: uid('c3'), day: day(-13) },
+    // c4 never done → ready.
+  ];
+
   // One retired habit, so the Archived screen has something to show. Its
   // entries stay in history and keep counting toward the days it was live.
   const archivedHabits = [
@@ -183,9 +206,17 @@ function buildSeed() {
     { ...base, id: uid('tlu1'), delta: -60, reason: 'upgrade', upgrade_key: 'speed', note: 'Better grit feed', created_at: now - 2 * DAY_MS },
   ];
 
+  // The chore checked today pays like a task — its ledger row keeps Home's
+  // "earned today" consistent with the checked box on the chores page.
+  ledger.push({
+    ...base, id: uid(`l${led++}`), delta: 3, reason: 'chore', source_type: 'chores',
+    source_id: uid('c1'), day: day(0), note: 'Water the plants', created_at: now - 3600000,
+  });
+
   return {
     tasks: [...tasks, ...doneTasks], subtasks,
-    habits: [...habits, ...archivedHabits], habit_entries, projects, milestones,
+    habits: [...habits, ...archivedHabits], habit_entries, chores, chore_entries,
+    projects, milestones,
     project_touches, shop_items, purchases, ledger,
     gems, tumbler_barrels, tumbler_ledger,
   };
@@ -198,6 +229,7 @@ const SCREENS = [
   ['tasks', '/tasks'], ['tasks-done', '/tasks/done'],
   ['habits', '/habits'], ['habits-month', '/habits/month'],
   ['habits-archived', '/habits/archived'],
+  ['chores', '/chores'],
   ['studio', '/studio'], ['studio-project', '/studio/p/seed-p0'],
   ['shop', '/shop'], ['shop-inventory', '/shop/inventory'],
   ['ledger', '/settings/ledger'], ['stats', '/settings/stats'],
@@ -211,6 +243,7 @@ const SCREENS = [
 // (the shopfront, the shelves) are where that shows up first.
 const DARK_SCREENS = [
   ['home', '/'], ['stats', '/settings/stats'], ['tasks', '/tasks'],
+  ['chores', '/chores'],
   ['shop', '/shop'], ['mine', '/tumbler/mine'], ['tumbler-shelf', '/tumbler/shelf'],
 ];
 

@@ -28,6 +28,12 @@ export const NAV = [
       { id: 'archived', label: 'Archived', path: '/habits/archived' },
     ],
   },
+  // Chores sit between habits and projects in spirit too: recurring work,
+  // but on a cooldown rather than a daily rhythm. They inherit the sixth
+  // accent from the old Rocks tab (folded into Shop below).
+  {
+    id: 'chores', label: 'Chores', icon: 'broom', path: '/chores', accent: 6,
+  },
   {
     id: 'studio', label: 'Studio', icon: 'studio', accent: 4,
     children: [
@@ -36,21 +42,15 @@ export const NAV = [
     ],
   },
   {
-    // Ledger moved to Settings. The shop is the two screens you actually
-    // shop with; the ledger is an audit log, and it was the third tab you
-    // never wanted while browsing.
+    // Shop and Rocks folded into one section (Oskar's call): the nav merges,
+    // the ECONOMIES don't — store/inventory spend points, the tumbler pages
+    // run on grit, and each page still shows only its own balance. Ledger
+    // stays under Settings for the same reason it left the shop tabs: it's an
+    // audit log, not a place you browse.
     id: 'shop', label: 'Shop', icon: 'shop', accent: 5,
     children: [
       { id: 'store', label: 'Store', path: '/shop' },
       { id: 'inventory', label: 'Inventory', path: '/shop/inventory' },
-    ],
-  },
-  // The tumbler runs on grit, not points — a separate economy on purpose, so
-  // there's a reason to open the app that isn't a task. It takes the sixth
-  // accent, which finally gives every hue in the palette a section of its own.
-  {
-    id: 'tumbler', label: 'Rocks', icon: 'gem', accent: 6,
-    children: [
       { id: 'barrels', label: 'Barrels', path: '/tumbler' },
       // The active half of the rock economy, next to the idle half.
       { id: 'mine', label: 'Mine', path: '/tumbler/mine' },
