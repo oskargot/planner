@@ -3,6 +3,7 @@
 import { db } from './db.js';
 import { dayEndMs, logicalDay, daysBetween, addDays } from './time.js';
 import { SIZE_POINTS } from './actions.js';
+import { barrelState, barrelsBySlot } from './tumbler.js';
 import { useLiveQuery } from 'dexie-react-hooks';
 
 // Balance is always computed from the ledger — there is no balance column (§4).
@@ -129,12 +130,12 @@ export function useGreetingState() {
 
     const unredeemed = (await db.purchases.toArray()).filter((p) => !p.deleted && !p.redeemed_at).length;
 
-    // A collected barrel has its started_at cleared, so "running or finished"
-    // is the only state this has to test for.
+    // Counted over the canonical row per slot, same as the Tumbler page — a
+    // duplicate slot row (two devices loading the same slot offline) must not
+    // make this claim more finished barrels than the screen can show.
     const now = Date.now();
-    const tumblerReady = (await db.tumbler_barrels.toArray()).filter(
-      (b) => !b.deleted && b.started_at && b.started_at + b.duration_ms <= now
-    ).length;
+    const tumblerReady = [...barrelsBySlot(await db.tumbler_barrels.toArray(), now).values()]
+      .filter((b) => barrelState(b, now) === 'ready').length;
 
     return {
       habitsTotal: habits.length,

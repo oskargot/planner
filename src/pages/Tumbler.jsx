@@ -5,6 +5,7 @@ import {
   UPGRADES,
   summarise,
   barrelState,
+  barrelsBySlot,
   remainingMs,
   formatRemaining,
   cycleDuration,
@@ -59,7 +60,10 @@ export default function Tumbler() {
   const [reveal, setReveal] = useState(null);
 
   const slots = Array.from({ length: barrelCount }, (_, i) => i);
-  const bySlot = new Map(barrels.map((b) => [b.slot, b]));
+  // The canonical row per slot, shared with collectBarrel — if this map and
+  // barrelForSlot ever pick differently, Open empties one row while the
+  // screen keeps showing the other.
+  const bySlot = barrelsBySlot(barrels, now);
   const ready = slots.filter((s) => barrelState(bySlot.get(s), now) === 'ready').length;
 
   return (
