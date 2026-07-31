@@ -26,6 +26,7 @@ export default function Stats() {
   const sources = [
     { key: 'task', label: 'Tasks', accent: 2, value: s.bySource.task },
     { key: 'habit', label: 'Habits', accent: 3, value: s.bySource.habit },
+    { key: 'chore', label: 'Chores', accent: 6, value: s.bySource.chore },
     { key: 'project', label: 'Projects', accent: 4, value: s.bySource.project },
     // Discoveries are the only points the rock economy pays, and they're
     // one-per-square for life — so this bar can only ever shrink as a share.

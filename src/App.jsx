@@ -14,6 +14,7 @@ import Stats from './pages/Stats.jsx';
 import Tasks from './pages/Tasks.jsx';
 import TasksDone from './pages/TasksDone.jsx';
 import HabitsToday from './pages/HabitsToday.jsx';
+import Chores from './pages/Chores.jsx';
 import HabitsMonth from './pages/HabitsMonth.jsx';
 import HabitsArchived from './pages/HabitsArchived.jsx';
 import Studio from './pages/Studio.jsx';
@@ -93,6 +94,7 @@ export default function App() {
             <Route path="/habits" element={<HabitsToday />} />
             <Route path="/habits/month" element={<HabitsMonth />} />
             <Route path="/habits/archived" element={<HabitsArchived />} />
+            <Route path="/chores" element={<Chores />} />
             <Route path="/studio" element={<Studio />} />
             <Route path="/studio/archived" element={<StudioArchived />} />
             {/* Same component as /studio: on a phone it becomes the page, on

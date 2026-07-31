@@ -67,16 +67,18 @@ troubleshooting in `deploy/README.md`.
 
 `main` is what Oskar pulls on jellybot, and it's kept fast-forwarded to
 whatever the current working branch is after each push. Current branch is
+`claude/planner-open-count-bug-n5js09` (the stuck-barrel duplicate fix, then
+chores + the shop/rocks nav fold); before it were
 `claude/planner-app-revamp-planning-ll1wyu` (the iPad revamp: dark theme,
-two-pane screens, ⌘K, stats, undo toasts, gem fusion); before it were
+two-pane screens, ⌘K, stats, undo toasts, gem fusion),
 `claude/planner-sub-tabs-redesign-2tp87l` (the sub-tab flyout),
 `claude/planner-redesign-features-tmhiy4` (colour palette + long-press +
 tumbler), `claude/iphone-planner-redesign-p6fw8r` (the iPhone pass) and
 `claude/oskar-planner-v1-wqpzus` (v1). Both pushes every time:
 
 ```bash
-git push -u origin claude/planner-app-revamp-planning-ll1wyu
-git push origin claude/planner-app-revamp-planning-ll1wyu:main
+git push -u origin claude/planner-open-count-bug-n5js09
+git push origin claude/planner-open-count-bug-n5js09:main
 ```
 
 ## Architecture map
@@ -190,8 +192,19 @@ scripts/
   emoji (habit `emoji`) is data and stays as-is.
 - **Heat-map ratios** divide by habits active *that day* (created_at ≤ day
   end), not today's count — imports must backdate habit `created_at`.
-- **No recurring tasks, no task↔project links, no login, no due dates** —
-  deliberate v1 non-goals; don't add hooks for them.
+- **No task↔project links, no login, no due dates** — deliberate non-goals;
+  don't add hooks for them. "No recurring tasks" was on this list until Oskar
+  asked for chores; the shape that made them admissible is the cooldown (next
+  bullet), NOT a schedule — recurring tasks with due dates are still out.
+- **Chores are a cooldown, never a schedule.** Doing one starts a rest of
+  `interval_days`; after that it's simply *ready* and waits forever — ready is
+  the terminal state, there is no "overdue" and no date anywhere. Completing
+  pays by size like a task (ledger reason `chore`, undo = negative row of what
+  the day actually paid). A resting chore's checkbox is disabled: the cooldown
+  is the anti-farm wall, the same job the zero-point rule does for subtasks —
+  without it a 7-day chore checked daily is task points for free. Entries
+  mirror `habit_entries` (day-scoped, UNIQUE(chore_id, day), revive-don't-remint,
+  server merges via the same dayConflict path).
 - **On a task row, tap opens its subtask drawer and hold opens the editor.**
   A completed long press also fires a click on release, so the tap handler
   checks `consumedRef` from `useLongPress` or the drawer opens behind the
@@ -326,6 +339,11 @@ odds. If a change would create a reason to feel late, it's the wrong change.
   Stats spent one release as a sub-page of Home and was obtrusive: giving Home
   children puts a sub-tab row on the landing screen, which you then see on
   every single visit. Home has no sub-pages for that reason.
+- Chores are brand new and untuned: default interval 7d, default size S, and
+  the "Nd since" quiet fact only appears past 2× the interval. The disabled
+  resting checkbox is the piece most likely to get pushback — if Oskar wants
+  to do a chore early, the honest version is an unpaid early check, not
+  paying early.
 - The mine is completely untuned by play. `EXTRACT_COST` (6) against a
   ~11-grit average crush is the number most likely to be wrong, and the
   shard/extract ratio is the one that decides whether careless digging is
@@ -359,6 +377,14 @@ odds. If a change would create a reason to feel late, it's the wrong change.
   `.box-name` clamps an inner `<span>`.
 - Oskar picked the rainbow ripple for the tap effect; the sparkle-stars and
   bubble variants were the runners-up if he wants to swap.
+- Nav is six sections again after two changes on request: Chores was added
+  (between Habits and Studio, taking accent 6 from the old Rocks tab), and
+  Shop + Rocks folded into one "Shop" section with six sub-pages (Store,
+  Inventory, Barrels, Mine, Shelf, Collection). The nav merged; the economies
+  did not — every page still shows only its own balance. The phone sub-tab
+  row scrolls horizontally (scrollbar hidden) because six labels don't fit
+  390px; the tumbler pages keep their accent-6 dots even though their nav
+  section is now accent-5 shop.
 - Left rail appears at ≥900px. Confirmed: iPad portrait (834pt) keeps the
   bottom bar and that's what he wants — he doesn't use portrait. Don't lower
   the breakpoint to "fix" it.

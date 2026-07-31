@@ -11,6 +11,7 @@ import Icon from '../components/Icon.jsx';
 const REASON_ICON = {
   task: 'tasks',
   habit: 'habits',
+  chore: 'broom',
   project: 'studio',
   purchase: 'shop',
   adjust: 'sliders',

@@ -24,8 +24,8 @@ const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 /*
  * Candidate second lines, most interesting first. `state` is:
- *   { habitsTotal, habitsDone, streak, tasksOpen, earnedToday, balance,
- *     stalest: { name, days } | null, unredeemed: number,
+ *   { habitsTotal, habitsDone, streak, tasksOpen, choresReady, earnedToday,
+ *     balance, stalest: { name, days } | null, unredeemed: number,
  *     nextAffordable: { name, cost } | null, almost: { name, short } | null,
  *     tumblerReady: number, hour }
  *
@@ -54,6 +54,12 @@ const LINES = [
     : null),
 
   // Nudges, phrased as observations rather than instructions.
+  // "Ready", never "due" — a chore off cooldown is an offer, not a debt.
+  (s) => (s.choresReady > 0
+    ? s.choresReady === 1
+      ? 'A chore is ready again.'
+      : `${s.choresReady} chores are ready again.`
+    : null),
   (s) => (s.stalest && s.stalest.days >= 7
     ? `${s.stalest.name} hasn't been touched in ${s.stalest.days} days.`
     : null),

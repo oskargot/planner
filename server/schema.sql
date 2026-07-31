@@ -55,6 +55,36 @@ CREATE TABLE IF NOT EXISTS habit_entries (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_habit_day ON habit_entries(habit_id, day);
 CREATE INDEX IF NOT EXISTS idx_habit_entries_updated ON habit_entries(updated_at);
 
+-- Chores: recurring quest-like work on a COOLDOWN, deliberately not a
+-- schedule. Doing one starts its rest; after interval_days it is simply
+-- "ready" again and waits forever. There is no due date and no overdue state
+-- anywhere — a chore can be ready, never late. Same day-scoped entry shape as
+-- habit_entries, same unique index, same merge rule.
+CREATE TABLE IF NOT EXISTS chores (
+  id            TEXT PRIMARY KEY,
+  name          TEXT NOT NULL,
+  emoji         TEXT,
+  color         TEXT,                -- accent index '1'..'6', NULL = auto
+  size          TEXT NOT NULL DEFAULT 'S',
+  interval_days INTEGER NOT NULL DEFAULT 7,
+  sort_order    REAL NOT NULL DEFAULT 0,
+  created_at    INTEGER NOT NULL,
+  updated_at    INTEGER NOT NULL,
+  deleted       INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_chores_updated ON chores(updated_at);
+
+CREATE TABLE IF NOT EXISTS chore_entries (
+  id          TEXT PRIMARY KEY,
+  chore_id    TEXT NOT NULL,
+  day         TEXT NOT NULL,
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  deleted     INTEGER NOT NULL DEFAULT 0
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_chore_day ON chore_entries(chore_id, day);
+CREATE INDEX IF NOT EXISTS idx_chore_entries_updated ON chore_entries(updated_at);
+
 CREATE TABLE IF NOT EXISTS projects (
   id          TEXT PRIMARY KEY,
   name        TEXT NOT NULL,

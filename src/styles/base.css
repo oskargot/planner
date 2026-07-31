@@ -336,7 +336,12 @@ h1, h2, h3 {
 .nav-row.sub {
   border-bottom: var(--border-hairline);
   background: var(--bg-surface-alt);
+  /* The folded Shop section carries six sub-pages — more than a 390px phone
+     can show at once. Scroll quietly instead of squeezing the labels. */
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.nav-row.sub::-webkit-scrollbar { display: none; }
 
 .nav-tab {
   flex: 1;
@@ -368,7 +373,8 @@ h1, h2, h3 {
 }
 
 .nav-subtab {
-  flex: 1;
+  flex: 1 0 auto;
+  white-space: nowrap;
   max-width: 160px;
   text-align: center;
   padding: var(--space-2) var(--space-2);
@@ -496,6 +502,7 @@ h1, h2, h3 {
   .home-grid > .card-studio { grid-column: 1; }
   .home-grid > .card-inventory { grid-column: 1; }
   .home-grid > .card-tasks { grid-column: 2; }
+  .home-grid > .card-chores { grid-column: 2; }
   .home-grid > .card-tumbler { grid-column: 2; }
 }
 

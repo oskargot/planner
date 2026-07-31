@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db.js';
-import { checkHabit, uncheckHabit, touchProject } from '../db/actions.js';
+import { checkHabit, uncheckHabit, touchProject, checkChore, SIZE_POINTS } from '../db/actions.js';
 import { logicalDay, parseDay, monthLabel } from '../db/time.js';
 import {
   useBalance,
@@ -11,6 +11,8 @@ import {
   habitDayStats,
   heatVar,
   staleness,
+  useChores,
+  choreStatus,
 } from '../db/selectors.js';
 import { greeting, flavorLine } from '../greeting.js';
 import { barrelState, barrelsBySlot, remainingMs, formatRemaining } from '../db/tumbler.js';
@@ -56,6 +58,7 @@ export default function Home() {
       <div className="home-grid">
         <HabitsCard />
         <TasksCard />
+        <ChoresCard />
         <StudioCard />
         <TumblerCard />
         <InventoryCard />
@@ -296,6 +299,47 @@ function TumblerCard() {
             </div>
           );
         })}
+      </div>
+    </Card>
+  );
+}
+
+/*
+ * Chores, only when something is ready. Like the inventory card it earns its
+ * row by having news — a list of resting cooldowns is not news, so a quiet
+ * day costs Home nothing.
+ */
+function ChoresCard() {
+  const today = logicalDay();
+  const { chores, lastDone } = useChores();
+  const ready = chores.filter(
+    (c) => choreStatus(c, lastDone.get(c.id), today).state === 'ready'
+  );
+  if (ready.length === 0) return null;
+
+  async function complete(chore, e) {
+    floatPoints(e.currentTarget, SIZE_POINTS[chore.size] ?? 0);
+    await checkChore(chore, today);
+  }
+
+  return (
+    <Card title={`Chores · ${ready.length} ready`} accent={6} to="/chores" className="card-chores">
+      <div className="stack-sm">
+        {ready.map((c, i) => (
+          <div className="row" key={c.id}>
+            <span style={{ display: 'inline-flex' }}>
+              <Check
+                on={false}
+                accent={itemAccent(c, chores.indexOf(c))}
+                round
+                onClick={(e) => complete(c, e)}
+                label={c.name}
+              />
+            </span>
+            {c.emoji && <span>{c.emoji}</span>}
+            <span className="grow">{c.name}</span>
+          </div>
+        ))}
       </div>
     </Card>
   );

@@ -199,6 +199,76 @@ export async function uncheckHabit(habitId, day) {
   await addLedger({ delta: -1, reason: 'habit', sourceType: 'habits', sourceId: habitId, day });
 }
 
+// ---- chores ----
+//
+// Recurring quest-like work — the middle ground between a task (done once)
+// and a habit (done daily). The design rule that made these safe to add at
+// all: a chore runs on a COOLDOWN, never a schedule. Doing it starts its
+// rest; after interval_days it's simply ready again and waits forever, like
+// a finished barrel does. Nothing here can be overdue, because "overdue" is
+// the exact feeling the rest of the app is built to avoid.
+//
+// Completing one pays by size like a task (chores are real work, not
+// structure), as its own ledger reason so Stats can show it as a source.
+
+export async function addChore(name, { emoji = null, color = null, size = 'S', intervalDays = 7 } = {}) {
+  const last = await db.chores.orderBy('sort_order').last();
+  return insertRow('chores', {
+    name,
+    emoji,
+    color,
+    size,
+    interval_days: intervalDays,
+    sort_order: (last?.sort_order ?? 0) + 1,
+  });
+}
+
+export async function updateChore(id, fields) {
+  await updateRow('chores', id, fields);
+}
+
+// Historical points stay, exactly like habits — which is also why restoring
+// is nothing but lifting the tombstone.
+export async function deleteChore(id) {
+  await softDelete('chores', id);
+}
+
+export async function restoreChore(id) {
+  await updateRow('chores', id, { deleted: 0 });
+}
+
+export async function checkChore(chore, day) {
+  // Revive a tombstoned entry rather than minting a new id — same reason as
+  // checkHabit: the (chore_id, day) unique index on the server must never see
+  // two live rows.
+  const existing = await db.chore_entries.where('[chore_id+day]').equals([chore.id, day]).first();
+  if (existing) {
+    if (!existing.deleted) return;
+    await updateRow('chore_entries', existing.id, { deleted: 0 });
+  } else {
+    await insertRow('chore_entries', { chore_id: chore.id, day });
+  }
+  const pts = SIZE_POINTS[chore.size] ?? 0;
+  if (pts) {
+    await addLedger({ delta: pts, reason: 'chore', sourceType: 'chores', sourceId: chore.id, day, note: chore.name });
+  }
+}
+
+export async function uncheckChore(chore, day) {
+  const existing = await db.chore_entries.where('[chore_id+day]').equals([chore.id, day]).first();
+  if (!existing || existing.deleted) return;
+  await updateRow('chore_entries', existing.id, { deleted: 1 });
+  // Reverse what that day actually paid rather than the chore's current size,
+  // so editing the size between check and uncheck can't leak points.
+  let net = 0;
+  await db.ledger.each((r) => {
+    if (!r.deleted && r.reason === 'chore' && r.source_id === chore.id && r.day === day) net += r.delta;
+  });
+  if (net) {
+    await addLedger({ delta: -net, reason: 'chore', sourceType: 'chores', sourceId: chore.id, day, note: `undo: ${chore.name}` });
+  }
+}
+
 // ---- projects ----
 
 export async function addProject(name, color = null, description = null) {
