@@ -22,6 +22,7 @@ import ShopStore from './pages/ShopStore.jsx';
 import ShopInventory from './pages/ShopInventory.jsx';
 import ShopLedger from './pages/ShopLedger.jsx';
 import Tumbler from './pages/Tumbler.jsx';
+import Mine from './pages/Mine.jsx';
 import TumblerShelf from './pages/TumblerShelf.jsx';
 import TumblerCollection from './pages/TumblerCollection.jsx';
 import Settings from './pages/Settings.jsx';
@@ -83,7 +84,10 @@ export default function App() {
         <div className={`page-inner page-slide-${dir}`}>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/stats" element={<Stats />} />
+            {/* Stats sat under Home for one release and put a sub-tab row on
+                the landing screen. It lives with the ledger now. */}
+            <Route path="/stats" element={<Navigate to="/settings/stats" replace />} />
+            <Route path="/settings/stats" element={<Stats />} />
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/tasks/done" element={<TasksDone />} />
             <Route path="/habits" element={<HabitsToday />} />
@@ -101,6 +105,7 @@ export default function App() {
             <Route path="/shop/ledger" element={<Navigate to="/settings/ledger" replace />} />
             <Route path="/settings/ledger" element={<ShopLedger />} />
             <Route path="/tumbler" element={<Tumbler />} />
+            <Route path="/tumbler/mine" element={<Mine />} />
             <Route path="/tumbler/shelf" element={<TumblerShelf />} />
             <Route path="/tumbler/collection" element={<TumblerCollection />} />
             <Route path="/settings" element={<Settings />} />

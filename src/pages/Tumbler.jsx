@@ -14,8 +14,10 @@ import {
   crushGem,
   buyUpgrade,
 } from '../db/tumbler.js';
+import { resetWorld } from '../db/mine.js';
 import { CYCLES, gemLabel, gritValue, SPECIES_BY_KEY } from '../tumbler/gems.js';
 import { confettiBurst } from '../fx.js';
+import { showToast } from '../toast.js';
 import Gem from '../tumbler/Gem.jsx';
 import Icon from '../components/Icon.jsx';
 
@@ -214,6 +216,13 @@ export function Reveal({ gem, close }) {
         <Gem gem={gem} size={140} />
         <div className="reveal-name">{gemLabel(gem)}</div>
         {species?.rare && <div className="reveal-rare">rare</div>}
+        {/* The only moment the rock economy hands you points, so it should
+            say so here rather than only showing up in the ledger later. */}
+        {gem.discovered > 0 && (
+          <div className="reveal-new">
+            <Icon name="spark" size={14} /> New to the collection · +{gem.discovered}
+          </div>
+        )}
         {crushed === null ? (
           <>
             <div className="row" style={{ gap: 'var(--space-2)' }}>
@@ -244,6 +253,22 @@ export function Reveal({ gem, close }) {
 }
 
 function Workshop({ grit, levels }) {
+  /*
+   * Prestige is the one purchase that takes something away, so it's the one
+   * that gets a confirmation — but a toast, not a dialog, and offered after
+   * the fact like every other destructive action in the app. The undo puts
+   * the grit back; it can't put the old world back, because the seed is gone
+   * the moment it's replaced. The toast says so.
+   */
+  async function buy(key, level) {
+    const ok = await buyUpgrade(key, level, grit);
+    if (!ok) return;
+    if (key === 'prestige') {
+      await resetWorld();
+      showToast('New claim staked — the mine is fresh ground, and richer');
+    }
+  }
+
   return (
     <section className="workshop">
       <h2 className="section-heading">Workshop</h2>
@@ -253,7 +278,7 @@ function Workshop({ grit, levels }) {
         const maxed = cost === null;
         const affordable = !maxed && cost <= grit;
         return (
-          <div className="list-item upgrade" key={key}>
+          <div className={`list-item upgrade${key === 'prestige' ? ' prestige' : ''}`} key={key}>
             <div className="grow">
               <div className="item-title">
                 {u.name}
@@ -266,7 +291,7 @@ function Workshop({ grit, levels }) {
             <button
               className={`btn${affordable ? ' primary' : ''}`}
               disabled={!affordable}
-              onClick={() => buyUpgrade(key, level, grit)}
+              onClick={() => buy(key, level)}
             >
               {maxed ? 'maxed' : (
                 <>

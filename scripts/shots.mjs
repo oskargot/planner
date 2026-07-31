@@ -174,7 +174,9 @@ function buildSeed() {
   ];
 
   const tumbler_ledger = [
-    ...[55, 24, 11, 11, 5, 22, 48, 5, 2].map((delta, i) => ({
+    // Enough grit banked that the mine's extraction (and its price tag) is
+    // actually exercisable in a shot rather than permanently greyed out.
+    ...[55, 24, 11, 11, 5, 22, 48, 5, 2, 180].map((delta, i) => ({
       ...base, id: uid(`tl${i}`), delta, reason: 'crush', upgrade_key: null, note: null, created_at: now - i * 8 * 3600000,
     })),
     { ...base, id: uid('tlu0'), delta: -120, reason: 'upgrade', upgrade_key: 'barrels', note: 'Another barrel', created_at: now - 3 * DAY_MS },
@@ -192,13 +194,14 @@ function buildSeed() {
 const SEED = buildSeed();
 
 const SCREENS = [
-  ['home', '/'], ['stats', '/stats'],
+  ['home', '/'],
   ['tasks', '/tasks'], ['tasks-done', '/tasks/done'],
   ['habits', '/habits'], ['habits-month', '/habits/month'],
   ['habits-archived', '/habits/archived'],
   ['studio', '/studio'], ['studio-project', '/studio/p/seed-p0'],
   ['shop', '/shop'], ['shop-inventory', '/shop/inventory'],
-  ['ledger', '/settings/ledger'], ['tumbler', '/tumbler'],
+  ['ledger', '/settings/ledger'], ['stats', '/settings/stats'],
+  ['tumbler', '/tumbler'], ['mine', '/tumbler/mine'],
   ['tumbler-shelf', '/tumbler/shelf'], ['tumbler-collection', '/tumbler/collection'],
   ['settings', '/settings'],
 ];
@@ -207,8 +210,8 @@ const SCREENS = [
 // token that never got a dark value, and the screens with the most furniture
 // (the shopfront, the shelves) are where that shows up first.
 const DARK_SCREENS = [
-  ['home', '/'], ['stats', '/stats'], ['tasks', '/tasks'],
-  ['shop', '/shop'], ['tumbler-shelf', '/tumbler/shelf'],
+  ['home', '/'], ['stats', '/settings/stats'], ['tasks', '/tasks'],
+  ['shop', '/shop'], ['mine', '/tumbler/mine'], ['tumbler-shelf', '/tumbler/shelf'],
 ];
 
 const VIEWPORTS = [
@@ -272,6 +275,21 @@ for (const [vpName, viewport, dsf] of VIEWPORTS) {
   await page.locator('.check').first().click();
   await page.waitForTimeout(500);
   await page.screenshot({ path: join(OUT, `${vpName}-toast.png`) });
+
+  // The mine, dug in. A fresh board is a blank grid of covered stone, which
+  // says nothing about the game — so drive the real gestures and let the real
+  // flood fill open it up. Clicking is a tap, which digs; the spread is wide
+  // enough to hit a few different regions.
+  await page.goto(`http://localhost:${PORT}/tumbler/mine`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(600);
+  const board = page.locator('.mine-board');
+  for (const nth of [16, 40, 63, 4, 88, 51]) {
+    const cell = board.locator('.mine-cell.covered').nth(nth);
+    if (await cell.count()) await cell.click({ force: true });
+    await page.waitForTimeout(150);
+  }
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: join(OUT, `${vpName}-mine-dug.png`) });
 
   // Fusion, end to end. The seeded shelf has four grade-3 stones at these
   // positions when sorted newest-first; picking three of them is the only way

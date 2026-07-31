@@ -6,16 +6,11 @@ export const APP_NAME = 'Planner';
 // plus a route in App.jsx. Each section owns one of the six rainbow accents.
 // `icon` is a name in components/Icon.jsx, not an emoji — see the note there.
 export const NAV = [
-  {
-    // Home owns the section path '/', and Stats hangs off it rather than
-    // taking a seventh seat in the nav: it's a way of looking at what Home
-    // already shows, not another place to keep things.
-    id: 'home', label: 'Home', icon: 'home', path: '/', accent: 1,
-    children: [
-      { id: 'today', label: 'Today', path: '/' },
-      { id: 'stats', label: 'Stats', path: '/stats' },
-    ],
-  },
+  // Home has no sub-pages, and shouldn't: it's the landing screen, and a
+  // sub-tab row on it is a row of chrome you see on every single visit. Stats
+  // lived here briefly and was obtrusive for exactly that reason — it's over
+  // with the ledger now, which is where the other look-don't-touch page is.
+  { id: 'home', label: 'Home', icon: 'home', path: '/', accent: 1 },
   {
     id: 'tasks', label: 'Tasks', icon: 'tasks', accent: 2,
     children: [
@@ -57,6 +52,8 @@ export const NAV = [
     id: 'tumbler', label: 'Rocks', icon: 'gem', accent: 6,
     children: [
       { id: 'barrels', label: 'Barrels', path: '/tumbler' },
+      // The active half of the rock economy, next to the idle half.
+      { id: 'mine', label: 'Mine', path: '/tumbler/mine' },
       { id: 'shelf', label: 'Shelf', path: '/tumbler/shelf' },
       { id: 'collection', label: 'Collection', path: '/tumbler/collection' },
     ],

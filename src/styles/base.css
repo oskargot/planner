@@ -1867,9 +1867,11 @@ h1, h2, h3 {
   pointer-events: none;
 }
 
+/* Clear of the rail AND of the sub-tab flyout that floats beside it — the
+   same 120px the page reserves, or an undo lands on top of the nav. */
 @media (min-width: 900px) {
   .toasts {
-    left: calc(96px + var(--space-4));
+    left: calc(96px + 120px + var(--space-2));
     right: auto;
     bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
     max-width: 420px;
@@ -2180,6 +2182,117 @@ h1, h2, h3 {
   align-items: center;
   gap: 2px;
   color: var(--text-secondary);
+}
+
+/* ---------- the mine ---------- */
+
+.mine-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+/*
+ * The board. A plain grid of fixed cells with the column count measured from
+ * the container — the same "a real number, not auto-fill" rule the shelves
+ * follow, because the pan maths has to agree with what's on screen.
+ *
+ * touch-action: none is load-bearing. Without it the browser claims the drag
+ * for scrolling and the pan never receives a pointermove, which on a phone
+ * means the board simply cannot be moved.
+ */
+.mine-board {
+  display: grid;
+  grid-template-columns: repeat(var(--mine-cols), var(--mine-cell));
+  justify-content: center;
+  gap: 2px;
+  /* Capped rather than full-bleed: at 1180px an uncapped board is thirty
+     columns of stone, and you can't hold thirty columns of deduction in your
+     head. A board wants to be a board. */
+  max-width: 780px;
+  margin: 0 auto;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  border: var(--border-hairline);
+  /* The recessed floor of the mine — the same furniture the shop's shelves
+     and the tumbler's cabinet are cut from, since it's literally the same
+     material. Dug cells are transparent and let this show through, which is
+     what makes a hole look like a hole. */
+  background-image: var(--shelf-back);
+  box-shadow: var(--shelf-back-inset);
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  cursor: grab;
+  overflow: hidden;
+}
+.mine-board:active { cursor: grabbing; }
+
+.mine-cell {
+  height: var(--mine-cell);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--size-md);
+  border: none;
+  padding: 0;
+}
+
+/* Undug ground: a raised stone. This is the only surface in the app that
+   wants to look chunky rather than papery — it's the one thing you're
+   supposed to want to hit, and it has to read as unbroken at a glance against
+   a board that's mostly numbers. */
+.mine-cell.covered {
+  background-image: var(--shelf-plank);
+  border: none;
+  box-shadow: var(--shelf-plank-shadow);
+  cursor: pointer;
+}
+
+/* Presses in over the length of the hold, so the careful extraction has the
+   same "this gesture is landing" feedback the long-press editors do. */
+.mine-cell.covered.holding {
+  transform: scale(0.9);
+  background: var(--accent-6-soft);
+  transition: transform var(--dur-slow) var(--ease-standard);
+}
+
+/* Dug ground is a hole, not a tile — it's simply the absence of stone, so the
+   board's own floor shows through. That makes the boundary between what you
+   know and what you don't the most legible edge on the screen, which is where
+   the whole game happens. */
+.mine-cell.open,
+.mine-cell.taken {
+  background: none;
+  color: var(--shelf-ink);
+}
+.mine-cell.taken { color: var(--cell-accent); }
+
+/* A shattered stone stays visible for the rest of the world's life. It's the
+   only lasting mark of a careless swing, and it should be. */
+.mine-cell.broken {
+  background: var(--accent-1-soft);
+  color: var(--cell-accent);
+  opacity: 0.75;
+}
+
+.list-item.upgrade.prestige { border-left: 3px solid var(--accent-6); }
+
+.reveal-new {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--accent-3-soft);
+  color: var(--accent-3-ink);
+  font-size: var(--size-sm);
+  font-weight: var(--weight-bold);
 }
 
 /* motion off: kill every animation/transition */

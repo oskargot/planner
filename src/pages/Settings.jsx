@@ -86,19 +86,24 @@ export default function Settings() {
           </label>
         </div>
 
-        {/* The ledger used to be the shop's third tab, in the way every time
-            you went shopping. It's an audit log — it belongs with the other
-            things you look at once a month. */}
+        {/* Both of these are look-don't-touch pages, which is why neither is
+            in the nav: the ledger was the shop's third tab and in the way
+            every time you went shopping, and Stats put a sub-tab row on the
+            landing screen. */}
         <div className="sheet field">
-          <label>Points ledger</label>
+          <label>Points</label>
           <div className="row wrap">
+            <Link className="btn" to="/settings/stats">
+              <Icon name="chart" size={15} /> Stats
+            </Link>
             <Link className="btn" to="/settings/ledger">
-              <Icon name="sliders" size={15} /> Open the ledger
+              <Icon name="sliders" size={15} /> Ledger
             </Link>
           </div>
           <p className="muted small">
-            Every point ever earned or spent, newest first — and the only place
-            to adjust the balance by hand.
+            Stats is thirty days at a glance. The ledger is every point ever
+            earned or spent, newest first — and the only place to adjust the
+            balance by hand.
           </p>
         </div>
 

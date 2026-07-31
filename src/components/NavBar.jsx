@@ -93,7 +93,7 @@ function Rail({ section, child, inSettings, onSearch }) {
   return (
     <div className="rail-wrap">
       <nav className="nav nav-rail" aria-label="Sections">
-        <NavLink to="/settings/ledger" className="rail-points" aria-label="Points and ledger">
+        <NavLink to="/settings/stats" className="rail-points" aria-label="Points and stats">
           <Icon name="spark" size={15} />
           <span>{balance ?? '…'}</span>
         </NavLink>

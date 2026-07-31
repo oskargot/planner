@@ -23,19 +23,27 @@ export default function Stats() {
 
   if (!s) return <p className="empty">Counting…</p>;
 
-  const totalSourced = Math.max(
-    1,
-    s.bySource.task + s.bySource.habit + s.bySource.project + Math.max(0, s.bySource.adjust)
-  );
   const sources = [
     { key: 'task', label: 'Tasks', accent: 2, value: s.bySource.task },
     { key: 'habit', label: 'Habits', accent: 3, value: s.bySource.habit },
     { key: 'project', label: 'Projects', accent: 4, value: s.bySource.project },
-    { key: 'adjust', label: 'Adjustments', accent: 6, value: Math.max(0, s.bySource.adjust) },
+    // Discoveries are the only points the rock economy pays, and they're
+    // one-per-square for life — so this bar can only ever shrink as a share.
+    { key: 'discovery', label: 'Discoveries', accent: 6, value: s.bySource.discovery },
+    { key: 'adjust', label: 'Adjustments', accent: 5, value: Math.max(0, s.bySource.adjust) },
   ].filter((r) => r.value > 0);
+  const totalSourced = Math.max(
+    1,
+    sources.reduce((sum, r) => sum + r.value, 0)
+  );
 
   return (
     <>
+      {/* No nav section owns this page, so it carries its own way back. */}
+      <Link className="back-link" to="/settings">
+        <Icon name="chevronLeft" size={14} /> Settings
+      </Link>
+
       <h1 className="page-title">
         <span className="accent-dot" style={{ background: 'var(--accent-1)' }} />
         Stats

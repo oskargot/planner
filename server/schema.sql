@@ -184,3 +184,28 @@ CREATE TABLE IF NOT EXISTS tumbler_ledger (
   deleted     INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_tumbler_ledger_updated ON tumbler_ledger(updated_at);
+
+-- The mine. The board itself is a pure function of mine_seed and is never
+-- stored; this is only the ground you've uncovered, as bitmasks over 16x16
+-- chunks. One row per chunk rather than per cell, because the board is
+-- infinite and a row per dug cell would be thousands of rows carrying one bit
+-- each.
+--
+-- The id is DERIVED ('mine:<seed>:<cx>:<cy>'), not a uuid, so two devices
+-- digging the same patch offline write the same row and merge by LWW instead
+-- of needing a unique index and a merge rule. Prestige rerolls mine_seed,
+-- which namespaces every id — the old chunks are tombstoned on reset rather
+-- than left to accumulate.
+
+CREATE TABLE IF NOT EXISTS mine_chunks (
+  id          TEXT PRIMARY KEY,
+  world_seed  TEXT NOT NULL,
+  cx          INTEGER NOT NULL,
+  cy          INTEGER NOT NULL,
+  dug         TEXT NOT NULL,      -- 256-bit hex mask: ground uncovered
+  whole       TEXT NOT NULL,      -- and of those, the gems that came out whole
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  deleted     INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_mine_chunks_updated ON mine_chunks(updated_at);

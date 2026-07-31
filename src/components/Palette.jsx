@@ -101,6 +101,14 @@ export default function Palette({ open, close }) {
         run: () => navigate('/settings'),
       });
     }
+    // Neither of these is in the nav, so the palette is the fastest way to
+    // either of them.
+    if (q && match('stats')) {
+      out.push({
+        kind: 'Go to', id: 'nav-stats', label: 'Stats', icon: 'chart',
+        run: () => navigate('/settings/stats'),
+      });
+    }
     if (q && match('ledger')) {
       out.push({
         kind: 'Go to', id: 'nav-ledger', label: 'Ledger', icon: 'sliders',

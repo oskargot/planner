@@ -44,10 +44,14 @@ const TABLES = {
   tumbler_barrels: ['id', 'slot', 'cycle_key', 'seed', 'species', 'grade', 'started_at', 'duration_ms', 'collected_at', 'created_at', 'updated_at', 'deleted'],
   gems: ['id', 'seed', 'species', 'grade', 'cycle_key', 'created_at', 'updated_at', 'deleted'],
   tumbler_ledger: ['id', 'delta', 'reason', 'upgrade_key', 'note', 'created_at', 'updated_at', 'deleted'],
+  // The mine's dug ground, as bitmasks over 16×16 chunks. Derived ids, so a
+  // plain LWW upsert is the whole merge story — no unique index, no conflict
+  // rule like the day-scoped tables below need.
+  mine_chunks: ['id', 'world_seed', 'cx', 'cy', 'dug', 'whole', 'created_at', 'updated_at', 'deleted'],
 };
 
 // Only these meta keys sync; everything else in meta is device-local.
-const SYNCED_META_KEYS = ['day_rollover_hour'];
+const SYNCED_META_KEYS = ['day_rollover_hour', 'mine_seed'];
 
 const pull = {};
 const upsert = {};

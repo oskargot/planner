@@ -109,10 +109,16 @@ src/
                      ColorPicker (itemAccent helper lives here),
                      Icon (the whole inline-SVG glyph set),
                      Palette (⌘K), Toasts (the undo rail)
+    mine.js          the mine's stored half: chunk bitmasks, dig/extract,
+                     prestige reset. Spends grit through tumbler.js's addGrit
+                     rather than writing tumbler_ledger itself.
   tumbler/
     gems.js          pure generation: species, grades, cycles, odds, fusion,
                      geometry
     Gem.jsx          the SVG renderer (dumb; all maths lives in gems.js)
+  mine/
+    board.js         pure: an infinite minesweeper board as a hash of
+                     (seed, x, y). No grid is ever generated or stored.
   pages/             one file per screen — EXCEPT Studio.jsx, which is both
                      /studio and /studio/p/:id (see the two-pane note below)
 server/
@@ -134,11 +140,23 @@ scripts/
   row, a refunded purchase is a positive `purchase` row, an un-crushed gem is a
   negative `crush` row. Rubbing out the original would make a device that
   already synced it disagree about the balance forever.
-- **Points and grit never mix.** The tumbler is a separate economy: no task
-  earns grit, no gem buys a shop item, and neither ledger is ever read by the
-  other side. `tumbler_ledger` follows the same append-only rule — the grit
-  balance AND the upgrade levels are both derived from its rows, because a
-  plain counter synced LWW loses spend when two devices are offline.
+- **Points and grit never mix, with exactly one exception.** No task earns
+  grit, no gem buys a shop item, grit buys nothing but rocks, and neither
+  balance is ever read by the other side. `tumbler_ledger` follows the same
+  append-only rule — the grit balance AND the upgrade levels are both derived
+  from its rows, because a plain counter synced LWW loses spend when two
+  devices are offline.
+  - The exception, added on request: **filling a new square in the collection
+    pays points, once, forever** (`awardDiscovery` in actions.js, reason
+    `discovery`). It runs in one direction only and it is a bounty on
+    DISCOVERIES, not on stones — 45 squares, each paying exactly once. That's
+    what keeps it safe: it can't be farmed, and it can't make you late, which
+    is the property the wall was really protecting. A per-stone rate would
+    make *not* tumbling cost you points, and that's the version that turns the
+    game into a chore.
+  - `mintGem` in db/tumbler.js is the only place a gem row is created —
+    barrels, fusion and the mine all go through it — which is what makes the
+    bounty impossible to forget at one of three call sites.
 - **Milestones and subtasks are worth 0 points** (anti-point-farming,
   deliberate). Both are structure inside something else; paying per subtask
   would make "one task, ten subtasks" the cheapest way to farm the ledger.
@@ -252,8 +270,33 @@ odds. If a change would create a reason to feel late, it's the wrong change.
   you. The inputs are tombstoned (see above — the squares survive), the price
   is the stones and nothing else, and `fuseGems` never touches
   `tumbler_ledger`. Flawless is the ceiling; there's nothing above it.
+- **The mine is the active half, and the gems are the mines.** Tap to dig —
+  free, and open ground counts the gems around it. Hold or right-click to
+  extract for grit, which is the only way a stone comes out whole. Swing at a
+  gem and it shatters: you get a third of its crush value in shards and **no
+  `gems` row is created**, so it fills no collection square. That's the entire
+  cost of carelessness, and it's why the minigame needs no fail state — you
+  can only ever lose something you never had.
+  - Extraction costing grit is what stops "hold every cell" from being the
+    whole game. It's also what ties the two halves together: the barrels make
+    gems slowly, crushing makes grit, and grit buys extractions — so reading
+    the board is the exchange rate between them.
+  - The board is a pure function of `(mine_seed, x, y)`: nothing is generated,
+    allocated or stored, both devices compute the same ground, and the stone
+    you can see in a cell is the one you get. Only the dug ground is stored,
+    as bitmasks over 16×16 chunks with **derived row ids**, so two devices
+    digging offline merge by LWW instead of needing a unique index. Losing a
+    few dug cells to a split is fine — digging is free.
+  - The flood fill's cap is not optional: on a board with no edges, an
+    uncapped fill is a frozen tab rather than a slow one.
+  - Prestige (`UPGRADES.prestige`) rerolls the world and raises density
+    permanently. Density cuts both ways on purpose — richer ground is also
+    harder to deduce. The collection, the shelf and the grit all survive it;
+    it resets the ground, not your work.
 - Balance knobs all live in `tumbler/gems.js` (`CYCLES`, `rollGrade`,
-  `rollSpecies`, `GRADES[].grit`) and `db/tumbler.js` (`UPGRADES`).
+  `rollSpecies`, `GRADES[].grit`), `db/tumbler.js` (`UPGRADES`),
+  `mine/board.js` (`BASE_DENSITY`, `DENSITY_PER_PRESTIGE`) and `db/mine.js`
+  (`EXTRACT_COST`).
 - Gem identity (species/grade/name) is STORED on the row; only the drawing is
   derived from the seed. Retuning the facet maths redraws old gems but can
   never re-grade them.
@@ -276,8 +319,17 @@ odds. If a change would create a reason to feel late, it's the wrong change.
   script that reads the mirrored `localStorage` preference before React boots;
   without it a dark launch flashes white for as long as IndexedDB takes to
   open, which is the exact thing auto exists to prevent.
-- Stats deliberately shows no grit and no combined score. Points and grit
-  don't mix, and a single number over both would be the first crack in that.
+- Stats deliberately shows no grit and no combined score. Discoveries appear
+  there as a points source like any other, but there is still no single number
+  spanning both economies and there shouldn't be.
+- Stats and the Ledger both live under Settings and neither is in the nav.
+  Stats spent one release as a sub-page of Home and was obtrusive: giving Home
+  children puts a sub-tab row on the landing screen, which you then see on
+  every single visit. Home has no sub-pages for that reason.
+- The mine is completely untuned by play. `EXTRACT_COST` (6) against a
+  ~11-grit average crush is the number most likely to be wrong, and the
+  shard/extract ratio is the one that decides whether careless digging is
+  ever worth it.
 - Task rows no longer show a size chip anywhere (list or Home) — the size is
   in the editor and the detail pane only. It's something you set once.
 - The Tasks toolbar takes two rows on a 390px phone. Acceptable for now; if it
