@@ -26,7 +26,11 @@ export default function Stats() {
   const sources = [
     { key: 'task', label: 'Tasks', accent: 2, value: s.bySource.task },
     { key: 'habit', label: 'Habits', accent: 3, value: s.bySource.habit },
-    { key: 'chore', label: 'Chores', accent: 6, value: s.bySource.chore },
+    // Not habits' 3, even though chores live under Habits now, and not the 6
+    // they used to wear — that's Rocks' again, and discoveries below already
+    // hold it. Every bar in one chart has to be a different colour, so chores
+    // take the accent no source was using.
+    { key: 'chore', label: 'Chores', accent: 1, value: s.bySource.chore },
     { key: 'project', label: 'Projects', accent: 4, value: s.bySource.project },
     // Discoveries are the only points the rock economy pays, and they're
     // one-per-square for life — so this bar can only ever shrink as a share.

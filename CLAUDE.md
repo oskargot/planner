@@ -67,8 +67,11 @@ troubleshooting in `deploy/README.md`.
 
 `main` is what Oskar pulls on jellybot, and it's kept fast-forwarded to
 whatever the current working branch is after each push. Current branch is
+`claude/planner-mining-organization-qnzqlh` (the nav reshuffle — chores under
+habits, Rocks split back out of Shop — plus the workshop split and the
+extraction-cost fix); before it were
 `claude/planner-open-count-bug-n5js09` (the stuck-barrel duplicate fix, then
-chores + the shop/rocks nav fold); before it were
+chores + the shop/rocks nav fold),
 `claude/planner-app-revamp-planning-ll1wyu` (the iPad revamp: dark theme,
 two-pane screens, ⌘K, stats, undo toasts, gem fusion),
 `claude/planner-sub-tabs-redesign-2tp87l` (the sub-tab flyout),
@@ -77,8 +80,8 @@ tumbler), `claude/iphone-planner-redesign-p6fw8r` (the iPhone pass) and
 `claude/oskar-planner-v1-wqpzus` (v1). Both pushes every time:
 
 ```bash
-git push -u origin claude/planner-open-count-bug-n5js09
-git push origin claude/planner-open-count-bug-n5js09:main
+git push -u origin claude/planner-mining-organization-qnzqlh
+git push origin claude/planner-mining-organization-qnzqlh:main
 ```
 
 ## Architecture map
@@ -344,10 +347,24 @@ odds. If a change would create a reason to feel late, it's the wrong change.
   resting checkbox is the piece most likely to get pushback — if Oskar wants
   to do a chore early, the honest version is an unpaid early check, not
   paying early.
-- The mine is completely untuned by play. `EXTRACT_COST` (6) against a
-  ~11-grit average crush is the number most likely to be wrong, and the
-  shard/extract ratio is the one that decides whether careless digging is
-  ever worth it.
+- `EXTRACT_COST` is **3**, down from 6 because the mine read as too harsh.
+  The old number was tuned against a note claiming a "~11-grit average crush",
+  but 11 is one CLEAR stone, not the average of the grade table: at prestige 0
+  the real expectation is 55/25/13/5.5/1.5 over grit 2/5/11/24/55 = 5.9, or
+  6.1 with the mine's 3% rare chance. So a perfectly read extraction returned
+  about +0.1 grit and a misread one was a flat −6 — careful play paid nothing
+  and the mine drained the barrels rather than rewarding them. At 3 a correct
+  read clears ~+3 before you decide whether to keep the stone, while blind
+  extraction still runs about −2.3 a cell, so the wall against "hold every
+  square" holds. **Do not make an empty extraction free or refunded** — that
+  takes the blind line to about −0.5 and the numbers on the board stop being
+  worth reading, which is the whole game. Any future retune should redo this
+  arithmetic rather than trusting a remembered number; that's how it went
+  wrong the first time.
+- Still untuned by play: the shard/extract ratio (whether careless digging is
+  ever worth it), and the fact that at prestige 0 the mine mostly yields
+  Chipped/Clouded — the grades you already have — so extraction fills new
+  collection squares more slowly than it looks like it should.
 - Task rows no longer show a size chip anywhere (list or Home) — the size is
   in the editor and the detail pane only. It's something you set once.
 - The Tasks toolbar takes two rows on a 390px phone. Acceptable for now; if it
@@ -377,14 +394,34 @@ odds. If a change would create a reason to feel late, it's the wrong change.
   `.box-name` clamps an inner `<span>`.
 - Oskar picked the rainbow ripple for the tap effect; the sparkle-stars and
   bubble variants were the runners-up if he wants to swap.
-- Nav is six sections again after two changes on request: Chores was added
-  (between Habits and Studio, taking accent 6 from the old Rocks tab), and
-  Shop + Rocks folded into one "Shop" section with six sub-pages (Store,
-  Inventory, Barrels, Mine, Shelf, Collection). The nav merged; the economies
-  did not — every page still shows only its own balance. The phone sub-tab
-  row scrolls horizontally (scrollbar hidden) because six labels don't fit
-  390px; the tumbler pages keep their accent-6 dots even though their nav
-  section is now accent-5 shop.
+- Nav is six sections, and the accent arithmetic finally works out: Home 1,
+  Tasks 2, Habits 3, Studio 4, Shop 5, Rocks 6, one hue each. Two moves got it
+  there, both on request:
+  - **Chores are a sub-page of Habits** (Today / Month / Chores / Archived),
+    not a section. They're the same kind of thing at two rhythms — recurring
+    work — and two top-level tabs made you ask which list something was on.
+    Nothing about the *mechanic* merged: chores are still a cooldown, still
+    pay ledger reason `chore`, still have their own table.
+  - **Shop and Rocks are separate sections again.** Folding them together put
+    six sub-tabs in one section, half spending points and half spending grit,
+    which is the confusion two ledgers exist to prevent. Rocks took accent 6
+    back from Chores, so the tumbler pages' accent-6 dots agree with their
+    section again. Routes stay under `/tumbler` — invisible in a PWA, and
+    renaming them would churn bookmarks and every `shots.mjs` route for
+    nothing. `/chores` redirects to `/habits/chores`.
+  - Neither section's sub-tab row needs the horizontal scroll the six-tab Shop
+    did; four labels fit 390px.
+- Stats colours bars by SOURCE, not by nav section, so chores are accent 1
+  there: habits already hold 3 and discoveries hold 6, and two bars in one
+  chart can't be the same colour. (Chore and discovery both sat on 6 before —
+  that was a real collision, not a choice.)
+- The upgrade list is one shared `Workshop` component taking a `keys` array.
+  Barrels/speed/quality render at the foot of the Barrels page; **prestige
+  renders under the Mine's board**, because it buys nothing you can see on the
+  barrels screen and rerolls ground you weren't looking at. `keys` rather than
+  a filter flag so a new track has to choose where it appears. The gap above
+  it is `.workshop`'s own `margin-top` now — it used to be `.barrels`'
+  `margin-bottom`, which only worked while the list had exactly one home.
 - Left rail appears at ≥900px. Confirmed: iPad portrait (834pt) keeps the
   bottom bar and that's what he wants — he doesn't use portrait. Don't lower
   the breakpoint to "fix" it.
