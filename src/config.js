@@ -19,20 +19,27 @@ export const NAV = [
     ],
   },
   {
+    // Chores live here rather than in a section of their own: a habit and a
+    // chore are the same kind of thing at two different rhythms — recurring
+    // work you keep returning to — and the only real difference is that one
+    // is scored daily and the other waits out a cooldown. Splitting them
+    // across two top-level tabs made you ask "which list was that on?", which
+    // is the question good organisation is supposed to delete.
+    //
+    // It also settles the accent arithmetic: Chores was holding the sixth
+    // accent, which belonged to Rocks before the two got folded together.
+    // Six sections, six accents, one hue each again.
     id: 'habits', label: 'Habits', icon: 'habits', accent: 3,
     children: [
       { id: 'today', label: 'Today', path: '/habits' },
+      // Today and Month are one list at two zoom levels, so nothing goes
+      // between them.
       { id: 'month', label: 'Month', path: '/habits/month' },
+      { id: 'chores', label: 'Chores', path: '/habits/chores' },
       // Archiving used to be a one-way door: the row vanished and there was
       // no screen anywhere that could show it again.
       { id: 'archived', label: 'Archived', path: '/habits/archived' },
     ],
-  },
-  // Chores sit between habits and projects in spirit too: recurring work,
-  // but on a cooldown rather than a daily rhythm. They inherit the sixth
-  // accent from the old Rocks tab (folded into Shop below).
-  {
-    id: 'chores', label: 'Chores', icon: 'broom', path: '/chores', accent: 6,
   },
   {
     id: 'studio', label: 'Studio', icon: 'studio', accent: 4,
@@ -42,15 +49,29 @@ export const NAV = [
     ],
   },
   {
-    // Shop and Rocks folded into one section (Oskar's call): the nav merges,
-    // the ECONOMIES don't — store/inventory spend points, the tumbler pages
-    // run on grit, and each page still shows only its own balance. Ledger
-    // stays under Settings for the same reason it left the shop tabs: it's an
-    // audit log, not a place you browse.
+    // Shop and Rocks were folded into one section for a release and are split
+    // again. Merging them was a nav decision that read as an economic one:
+    // six sub-tabs in one section, half of them spending points and half
+    // spending grit, which is exactly the confusion the two ledgers exist to
+    // prevent. Two sections say it structurally, with no explaining to do.
+    //
+    // Ledger stays under Settings for the same reason it left these tabs:
+    // it's an audit log, not a place you browse.
     id: 'shop', label: 'Shop', icon: 'shop', accent: 5,
     children: [
       { id: 'store', label: 'Store', path: '/shop' },
       { id: 'inventory', label: 'Inventory', path: '/shop/inventory' },
+    ],
+  },
+  // The rock economy, back in its own section and back on the sixth accent.
+  // It runs on grit, not points — separate on purpose, so there's a reason to
+  // open the app that isn't a task.
+  //
+  // Paths stay under /tumbler: they're invisible in a standalone PWA, and
+  // renaming them would churn every bookmark and screenshot route for nothing.
+  {
+    id: 'tumbler', label: 'Rocks', icon: 'gem', accent: 6,
+    children: [
       { id: 'barrels', label: 'Barrels', path: '/tumbler' },
       // The active half of the rock economy, next to the idle half.
       { id: 'mine', label: 'Mine', path: '/tumbler/mine' },

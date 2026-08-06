@@ -323,7 +323,7 @@ function ChoresCard() {
   }
 
   return (
-    <Card title={`Chores · ${ready.length} ready`} accent={6} to="/chores" className="card-chores">
+    <Card title={`Chores · ${ready.length} ready`} accent={3} to="/habits/chores" className="card-chores">
       <div className="stack-sm">
         {ready.map((c, i) => (
           <div className="row" key={c.id}>

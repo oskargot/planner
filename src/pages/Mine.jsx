@@ -10,7 +10,7 @@ import {
   EXTRACT_COST,
 } from '../db/mine.js';
 import { isGem, gemAt, neighbourCount, seedNumber, density } from '../mine/board.js';
-import { useTumbler, Reveal } from './Tumbler.jsx';
+import { useTumbler, Reveal, Workshop } from './Tumbler.jsx';
 import { gemLabel, SPECIES_BY_KEY } from '../tumbler/gems.js';
 import { showToast } from '../toast.js';
 import { useWide } from '../useMediaQuery.js';
@@ -186,6 +186,10 @@ export default function Mine() {
         <span className="hint-touch">tap to dig · hold to extract · drag to move</span>
         <span className="hint-pointer">click to dig · right-click to extract · drag to move</span>
       </p>
+
+      {/* Prestige lives here, under the ground it rerolls, rather than at the
+          foot of the barrels page where it bought nothing you could see. */}
+      <Workshop grit={grit} levels={levels} keys={['prestige']} title="The claim" />
 
       {reveal && <Reveal gem={reveal} close={() => setReveal(null)} />}
     </>

@@ -47,7 +47,9 @@ export default function Chores() {
   return (
     <>
       <h1 className="page-title">
-        <span className="accent-dot" style={{ background: 'var(--accent-6)' }} />
+        {/* Habits' accent: chores are a sub-page of that section now, and the
+            dot has to agree with the sub-tab row above it. */}
+        <span className="accent-dot" style={{ background: 'var(--accent-3)' }} />
         Chores
         {chores.length > 0 && (
           <span className="longpress-hint" style={{ marginLeft: 'auto' }}>

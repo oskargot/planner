@@ -229,7 +229,7 @@ const SCREENS = [
   ['tasks', '/tasks'], ['tasks-done', '/tasks/done'],
   ['habits', '/habits'], ['habits-month', '/habits/month'],
   ['habits-archived', '/habits/archived'],
-  ['chores', '/chores'],
+  ['chores', '/habits/chores'],
   ['studio', '/studio'], ['studio-project', '/studio/p/seed-p0'],
   ['shop', '/shop'], ['shop-inventory', '/shop/inventory'],
   ['ledger', '/settings/ledger'], ['stats', '/settings/stats'],
@@ -243,7 +243,7 @@ const SCREENS = [
 // (the shopfront, the shelves) are where that shows up first.
 const DARK_SCREENS = [
   ['home', '/'], ['stats', '/settings/stats'], ['tasks', '/tasks'],
-  ['chores', '/chores'],
+  ['chores', '/habits/chores'],
   ['shop', '/shop'], ['mine', '/tumbler/mine'], ['tumbler-shelf', '/tumbler/shelf'],
 ];
 

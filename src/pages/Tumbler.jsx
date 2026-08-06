@@ -95,7 +95,14 @@ export default function Tumbler() {
         ))}
       </div>
 
-      <Workshop grit={grit} levels={levels} />
+      {/* Prestige is deliberately absent: it buys nothing on this screen. It
+          lives under the board it rerolls. */}
+      <Workshop
+        grit={grit}
+        levels={levels}
+        keys={['barrels', 'speed', 'quality']}
+        title="Workshop"
+      />
 
       {reveal && <Reveal gem={reveal} close={() => setReveal(null)} />}
     </>
@@ -256,7 +263,19 @@ export function Reveal({ gem, close }) {
   );
 }
 
-function Workshop({ grit, levels }) {
+/*
+ * The upgrade list, shared by two screens.
+ *
+ * It used to be one "Workshop" block at the foot of this page holding all four
+ * tracks — including prestige, which changes nothing here and rerolls a board
+ * on a screen you weren't looking at. An upgrade should sit next to the thing
+ * it changes, so the caller says which tracks it owns: barrels/speed/quality
+ * below, prestige on the Mine.
+ *
+ * `keys` rather than a filter flag, so adding a track later has to make an
+ * explicit choice about where it appears instead of silently landing here.
+ */
+export function Workshop({ grit, levels, keys, title }) {
   /*
    * Prestige is the one purchase that takes something away, so it's the one
    * that gets a confirmation — but a toast, not a dialog, and offered after
@@ -275,8 +294,8 @@ function Workshop({ grit, levels }) {
 
   return (
     <section className="workshop">
-      <h2 className="section-heading">Workshop</h2>
-      {Object.entries(UPGRADES).map(([key, u]) => {
+      <h2 className="section-heading">{title}</h2>
+      {keys.map((key) => [key, UPGRADES[key]]).map(([key, u]) => {
         const level = levels[key];
         const cost = upgradeCost(key, level);
         const maxed = cost === null;

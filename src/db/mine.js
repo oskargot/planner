@@ -32,12 +32,30 @@ export const CHUNK = 16;
 const BITS = CHUNK * CHUNK;
 const EMPTY_MASK = '0'.repeat(BITS / 4);
 
-// What a careful extraction costs. This is the entire economy of the minigame:
-// digging is free because digging is how you learn anything, and extraction is
-// the commitment. Guessing burns grit; reading the board doesn't. That's the
-// skill, and it's what makes the mine a better use of grit than the barrels
-// for someone who's actually paying attention.
-export const EXTRACT_COST = 6;
+/*
+ * What a careful extraction costs. This is the entire economy of the minigame:
+ * digging is free because digging is how you learn anything, and extraction is
+ * the commitment. Guessing burns grit; reading the board doesn't.
+ *
+ * Was 6, which made the mine a grit drain rather than a reason to open it. The
+ * note it was tuned against said "~11-grit average crush", but 11 is the value
+ * of a single CLEAR stone, not the average of the grade table. The real
+ * expectation at prestige 0 is 55/25/13/5.5/1.5 over grit 2/5/11/24/55, which
+ * is 5.9 — 6.1 with the mine's 3% rare chance. So a perfectly read extraction
+ * returned about a tenth of a grit over its own price, and every misread cell
+ * was a flat -6. Careful play paid nothing and careless play paid less.
+ *
+ * At 3 a correct read clears about +3 before you've even decided whether to
+ * keep the stone, and the wall it exists to hold still holds: extracting blind
+ * is -3 against 12% odds on a ~6-grit stone, or about -2.3 a cell, so "hold
+ * every square" is still comfortably worse than reading the numbers.
+ *
+ * Deliberately NOT refunded when the ground turns out empty, which was the
+ * other obvious fix. Costing nothing to be wrong is the same thing as costing
+ * nothing to guess: it takes the blind-extraction line from -2.3 to about -0.5
+ * a cell and the numbers on the board stop being worth reading.
+ */
+export const EXTRACT_COST = 3;
 
 // ---- bitmasks ----
 

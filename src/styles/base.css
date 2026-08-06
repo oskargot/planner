@@ -1385,7 +1385,6 @@ h1, h2, h3 {
 .barrels {
   display: grid;
   gap: var(--space-3);
-  margin-bottom: var(--space-6);
 }
 
 .barrel {
@@ -1499,7 +1498,12 @@ h1, h2, h3 {
   border-radius: var(--radius-full);
 }
 
-/* ---------- workshop ---------- */
+/* ---------- workshop ----------
+   The gap above the upgrade list used to be `.barrels`' bottom margin, which
+   only worked because the list was always the thing under the barrels. It's on
+   two screens now — the mine's prestige track sits under the board — so the
+   space belongs to the block that needs it, not to whatever precedes it. */
+.workshop { margin-top: var(--space-6); }
 
 .section-heading {
   font-family: var(--font-display);

@@ -94,7 +94,10 @@ export default function App() {
             <Route path="/habits" element={<HabitsToday />} />
             <Route path="/habits/month" element={<HabitsMonth />} />
             <Route path="/habits/archived" element={<HabitsArchived />} />
-            <Route path="/chores" element={<Chores />} />
+            {/* Chores moved under Habits — same kind of thing, two rhythms.
+                The old top-level address still lands. */}
+            <Route path="/habits/chores" element={<Chores />} />
+            <Route path="/chores" element={<Navigate to="/habits/chores" replace />} />
             <Route path="/studio" element={<Studio />} />
             <Route path="/studio/archived" element={<StudioArchived />} />
             {/* Same component as /studio: on a phone it becomes the page, on
