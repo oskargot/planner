@@ -12,6 +12,15 @@ The full v1 spec lives in the original handoff doc; this file is the working
 summary. The old app being replaced was "mochi house" — its data was imported
 via `scripts/convert-mochi.mjs`.
 
+`docs/design.md` holds agreed design direction that isn't built yet — read it
+before changing navigation or page structure, because some of what's described
+below is scheduled to change there. A spec moves out of that file and into this
+one, compressed, once it ships. Currently specified and unbuilt: **nested
+dashboards** (§1), which turns every section root into a dashboard of its
+sub-pages and moves five routes down a level, and **the constant frame** (§2),
+which makes the phone's top row persistent and its currency readout contextual
+— points on five sections, grit on Rocks, never both at once.
+
 ## Commands
 
 ```bash
