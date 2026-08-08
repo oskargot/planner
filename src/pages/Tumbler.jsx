@@ -70,10 +70,9 @@ export default function Tumbler() {
     <>
       <h1 className="page-title">
         <span className="accent-dot" style={{ background: 'var(--accent-6)' }} />
+        {/* No grit tally here any more — the frame (or the rail) is the
+            currency's one home now (design.md §2). */}
         Tumbler
-        <span className="points-tally grit" style={{ marginLeft: 'auto' }}>
-          <Icon name="gem" size={16} /> {grit}
-        </span>
       </h1>
 
       <p className="tumbler-blurb">

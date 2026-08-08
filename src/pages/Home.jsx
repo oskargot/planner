@@ -6,7 +6,6 @@ import { checkHabit, uncheckHabit, touchProject, checkChore, SIZE_POINTS } from 
 import { logicalDay } from '../db/time.js';
 import {
   useBalance,
-  useEarnedToday,
   useGreetingState,
   staleness,
   useChores,
@@ -16,7 +15,6 @@ import { greeting, flavorLine } from '../greeting.js';
 import { barrelState, barrelsBySlot, remainingMs, formatRemaining } from '../db/tumbler.js';
 import { useTumbler } from './Tumbler.jsx';
 import { floatPoints, confettiBurst } from '../fx.js';
-import { APP_NAME } from '../config.js';
 import Card from '../components/Card.jsx';
 import Check from '../components/Check.jsx';
 import MiniMonth from '../components/MiniMonth.jsx';
@@ -29,27 +27,10 @@ import { completeWithUndo } from './Tasks.jsx';
 const LIST_LIMIT = 8;
 
 export default function Home() {
-  const balance = useBalance();
-  const earned = useEarnedToday();
-
+  // The header that lived here — wordmark, balance, gear — became the
+  // app-wide TopFrame (design.md §2). Home renders content only now.
   return (
     <>
-      <header className="row spread home-header">
-        <h1 className="display wordmark">{APP_NAME}</h1>
-        <div className="row" style={{ gap: 'var(--space-3)' }}>
-          {/* Stats rather than the ledger: tapping the number is nearly always
-              "how am I doing", not "what was that one transaction". */}
-          <Link to="/settings/stats" className="header-points" aria-label="Points">
-            <div className="balance">
-              <Icon name="spark" size={18} /> {balance ?? '…'}
-            </div>
-            <div className="muted small">+{earned} today</div>
-          </Link>
-          <Link to="/settings" className="settings-btn" aria-label="Settings">
-            <Icon name="gear" size={24} />
-          </Link>
-        </div>
-      </header>
       <Greeting />
       {/* Five cards, one per section (design.md §1): Chores folded into the
           Habits digest and Inventory into the Shop one, because a Home card

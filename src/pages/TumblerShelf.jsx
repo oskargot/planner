@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db.js';
 import { crushGem, uncrushGem, fuseGems } from '../db/tumbler.js';
-import { useTumbler, Reveal } from './Tumbler.jsx';
+import { Reveal } from './Tumbler.jsx';
 import {
   gemLabel,
   gritValue,
@@ -49,7 +49,6 @@ const SORTS = {
 };
 
 export default function TumblerShelf() {
-  const { grit } = useTumbler();
   const [sort, setSort] = useState('newest');
   const [picked, setPicked] = useState(() => new Set());
   const [reveal, setReveal] = useState(null);
@@ -103,9 +102,6 @@ export default function TumblerShelf() {
       <h1 className="page-title">
         <span className="accent-dot" style={{ background: 'var(--accent-6)' }} />
         Shelf
-        <span className="points-tally grit" style={{ marginLeft: 'auto' }}>
-          <Icon name="gem" size={16} /> {grit}
-        </span>
       </h1>
 
       {gems.length > 0 && (

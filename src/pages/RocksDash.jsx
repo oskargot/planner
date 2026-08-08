@@ -77,19 +77,15 @@ function BarrelsCard() {
 }
 
 function MineCard() {
-  const { grit, levels } = useTumbler();
+  const { levels } = useTumbler();
   const prestige = levels?.prestige ?? 0;
 
+  // No grit tally — the frame carries it on every Rocks screen (design.md §2).
   return (
     <Card title="Mine" accent={6} to="/tumbler/mine">
-      <div className="row">
-        <span className="points-tally grit">
-          <Icon name="gem" size={15} /> {grit}
-        </span>
-        <span className="muted small grow" style={{ textAlign: 'right' }}>
-          digging is free · extraction costs {EXTRACT_COST}
-        </span>
-      </div>
+      <p className="muted small">
+        Digging is free · extraction costs {EXTRACT_COST} grit.
+      </p>
       {prestige > 0 && (
         <p className="muted small" style={{ marginTop: 'var(--space-2)' }}>
           World {prestige + 1} — richer ground, harder reads.

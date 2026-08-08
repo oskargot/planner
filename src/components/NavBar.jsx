@@ -1,6 +1,9 @@
 import { NavLink, useLocation } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../db/db.js';
 import { NAV, matchNav, sectionPath } from '../config.js';
 import { useBalance } from '../db/selectors.js';
+import { summarise } from '../db/tumbler.js';
 import Icon from './Icon.jsx';
 
 // Two renderings of the same NAV config, toggled purely by CSS breakpoint:
@@ -89,14 +92,27 @@ function SubRow({ tabs, accent, activeId }) {
  */
 function Rail({ section, child, inSettings, onSearch }) {
   const balance = useBalance();
+  const ledger = useLiveQuery(() => db.tumbler_ledger.toArray(), [], []);
+  const { grit } = summarise(ledger);
+  // The currency slot is contextual (design.md §2): a screen shows the
+  // currency it spends and never both. Settings reads as points-side —
+  // Stats and the Ledger both are.
+  const gritMode = !inSettings && section.id === 'tumbler';
 
   return (
     <div className="rail-wrap">
       <nav className="nav nav-rail" aria-label="Sections">
-        <NavLink to="/settings/stats" className="rail-points" aria-label="Points and stats">
-          <Icon name="spark" size={15} />
-          <span>{balance ?? '…'}</span>
-        </NavLink>
+        {gritMode ? (
+          <NavLink to="/tumbler" className="rail-points grit" aria-label="Grit">
+            <Icon name="gem" size={15} />
+            <span>{grit}</span>
+          </NavLink>
+        ) : (
+          <NavLink to="/settings/stats" className="rail-points" aria-label="Points and stats">
+            <Icon name="spark" size={15} />
+            <span>{balance ?? '…'}</span>
+          </NavLink>
+        )}
 
         <div className="rail-sections">
           {NAV.map((s) => {

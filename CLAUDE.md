@@ -14,12 +14,12 @@ via `scripts/convert-mochi.mjs`.
 
 `docs/design.md` holds agreed design direction that isn't built yet — read it
 before changing navigation or page structure. A spec moves out of that file and
-into this one, compressed, once it ships; **nested dashboards** (§1) shipped
-and lives in the bullets below. Currently specified and unbuilt: **the
-constant frame** (§2), which makes the phone's top row persistent and its
-currency readout contextual — points on five sections, grit on Rocks, never
-both at once — and wants dashboards to eventually take section-shaped forms
-(Rocks as a workshop map) rather than card grids.
+into this one, compressed, once it ships; **nested dashboards** (§1) and the
+frame half of **the constant frame** (§2) both have, and live in the bullets
+below. Still open in §2: dashboards eventually taking section-shaped forms
+(Rocks as a workshop map, Habits as a calendar wall) rather than card grids,
+whether two-page sections need sub-tab rows at all (and whether those rows
+belong at the bottom on a phone), and dismissible chrome.
 
 ## Commands
 
@@ -77,7 +77,8 @@ troubleshooting in `deploy/README.md`.
 `main` is what Oskar pulls on jellybot, and it's kept fast-forwarded to
 whatever the current working branch is after each push. Current branch is
 `claude/planner-gacha-machine-task-61aau8` (the task gacha from mochi house,
-rebuilt); before it were
+then design.md §1 nested dashboards, then the §2 constant frame); before it
+were
 `claude/planner-mining-organization-qnzqlh` (the nav reshuffle — chores under
 habits, Rocks split back out of Shop — plus the workshop split and the
 extraction-cost fix),
@@ -120,8 +121,11 @@ src/
     backup.js        client-side JSON export/import (merge, LWW)
   themes/            _tokens.css is the contract; paper + dark + mono
   components/        NavBar (bottom bar <900px; ≥900px an icon rail whose
-                     sub-page tabs fly out from behind it, balance on top
-                     and search/gear at the foot), Card, Check,
+                     sub-page tabs fly out from behind it, the contextual
+                     currency on top and search/gear at the foot),
+                     TopFrame (the phone's constant top row — currency,
+                     search, settings — on every screen; hidden ≥900px
+                     where the rail is the frame), Card, Check,
                      ColorPicker (itemAccent helper lives here),
                      Icon (the whole inline-SVG glyph set),
                      Palette (⌘K), Toasts (the undo rail),
@@ -456,6 +460,25 @@ odds. If a change would create a reason to feel late, it's the wrong change.
     first in the DOM (that's the phone reading order). Columns as grid items
     rather than per-card `grid-column` (Home's technique) because a tall live
     card sharing grid rows with short neighbours opens gaps under them.
+- **The constant frame** (design.md §2, the frame half shipped). Chrome comes
+  in three tiers: identical everywhere (search, the settings door), fixed slot
+  with contextual contents (the currency), and the section's own (everything
+  below). On phones `TopFrame` renders one row on every screen, outside the
+  scrolling `.page` so it neither scrolls away nor slides with the section
+  animation, and it owns the safe-area inset (`.page`'s top padding shrank at
+  <900px — the ≥900px block restores it). It grew from Home's old header:
+  wordmark in the left slot on Home, empty elsewhere, then currency · search ·
+  gear. Search previously did not exist on the phone at all.
+  - **A screen shows the currency it spends and never both** — points
+    everywhere, grit inside Rocks, same slot, same two-line shape (the row
+    must never change height between sections). The rail's balance slot obeys
+    the same rule at ≥900px. There is deliberately no screen where the two
+    numbers can be compared; the wall between the economies is drawn by the
+    chrome itself. The grit chip links to `/tumbler` (Stats shows no grit on
+    purpose), the points chip to Stats.
+  - The frame is the currency's ONE home: the per-page tallies that used to
+    sit in the Store/Ledger/Tumbler/Mine/Shelf titles are gone. Don't
+    reintroduce them — two readouts of one number is how they drift.
 - Nav is six sections, and the accent arithmetic finally works out: Home 1,
   Tasks 2, Habits 3, Studio 4, Shop 5, Rocks 6, one hue each. Two moves got it
   there, both on request:
