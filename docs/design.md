@@ -27,7 +27,11 @@ Open questions that survived the build:
 
 ## 2. The frame is constant, the contents are not
 
-**Status: specified, not built.** Studied from Chiikawa Pocket (ちいかわぽけっと)
+**Status: the frame itself is shipped** — the three tiers, the contextual
+currency slot, and the persistent phone top row are compressed into CLAUDE.md
+("The constant frame"); the full spec for those parts is in this file's git
+history. **Still open here**: dashboard forms, the sub-tab questions, and
+dismissible chrome, below. Studied from Chiikawa Pocket (ちいかわぽけっと)
 at Oskar's suggestion — see the note at the end for what was taken and what
 deliberately wasn't.
 
@@ -42,40 +46,15 @@ all six sections read as one screen with different nouns on it. They shouldn't
 — a section should look like the thing it is. What makes that safe rather than
 chaotic is a frame that never moves.
 
-### Three tiers of chrome
+### Shipped: the three tiers, the contextual currency, the phone frame
 
-The distinction that makes this work is that "chrome" is not one thing:
-
-1. **Identical everywhere.** The nav, the settings door, search. Same content,
-   same position, every screen. You stop seeing it, which is the goal.
-2. **Positionally fixed, contextually filled.** Same slot, same shape, contents
-   depend on where you are. The currency readout is the whole of this tier.
-3. **Wholly the section's.** The middle of the screen. Owes nothing to any
-   other page.
-
-Most of the value is in tier 2, which is the tier Planner currently doesn't
-have at all.
-
-### Currency is contextual
-
-**A page shows the currency it spends, and never both.**
-
-Points appear on Home, Tasks, Habits, Studio and Shop. Grit appears on Rocks.
-They occupy the same slot and never share it. The rule the whole app is built
-on — points and grit never mix — stops being a thing the code politely respects
-and becomes a thing the chrome makes structurally true. There is no screen
-where you can compare them, because there is no frame that holds both.
-
-This also answers a question raised while specifying §1 and left open: what
-goes in the *other* top corner on a phone. Nothing does. The question assumed
-two balances need two homes; they need one home and a rule about who's in it.
-
-### The frame follows you
-
-On a phone today, the balance and the gear exist in Home's header and nowhere
-else — leave Home and they're gone. At ≥900px the rail carries them everywhere,
-so the iPad already has this property and the phone doesn't. The phone gets it:
-the top row persists across every page, with the section's currency in it.
+Compressed into CLAUDE.md. In one breath: chrome comes in three tiers
+(identical everywhere / positionally fixed but contextually filled / wholly the
+section's); the currency slot is the whole of tier 2 — a page shows the
+currency it spends and never both, so there is no screen where the two numbers
+can be compared; and the phone got a persistent top row (grown from Home's old
+header) that carries the currency, search and the settings door on every
+screen. The rail's balance slot follows the same rule at ≥900px.
 
 ### Dashboards need not be grids
 
@@ -133,9 +112,10 @@ to show less by default.
 
 ### Open
 
-- Whether the persistent top row on a phone carries anything besides the
-  currency and the gear — a section title, for instance, which the studied app
-  mostly doesn't bother with.
+- ~~Whether the persistent top row on a phone carries anything besides the
+  currency and the gear.~~ Settled in the build: the wordmark on Home, nothing
+  elsewhere — pages keep their own titles, and the row gained search (which
+  the phone previously had no way to open at all).
 - Whether removing sub-tab rows from two-page sections (Tasks, Studio) is a
   simplification or a regression. Worth building one of each and looking.
 - Whether the sub-tab row moves to the bottom on phones generally, which is a

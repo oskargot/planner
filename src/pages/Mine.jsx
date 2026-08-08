@@ -148,9 +148,6 @@ export default function Mine() {
       <h1 className="page-title">
         <span className="accent-dot" style={{ background: 'var(--accent-6)' }} />
         Mine
-        <span className="points-tally grit" style={{ marginLeft: 'auto' }}>
-          <Icon name="gem" size={16} /> {grit}
-        </span>
       </h1>
 
       <p className="tumbler-blurb">

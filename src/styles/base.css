@@ -89,7 +89,9 @@ h1, h2, h3 {
   flex: 1;
   overflow-y: auto;
   padding: var(--space-4);
-  padding-top: calc(var(--space-4) + env(safe-area-inset-top));
+  /* The frame above carries the safe-area inset on phones; the ≥900px block
+     below restores the full padding where the frame doesn't exist. */
+  padding-top: var(--space-3);
   padding-bottom: var(--space-6);
   -webkit-overflow-scrolling: touch;
 }
@@ -164,7 +166,10 @@ h1, h2, h3 {
      is gone and the panel was landing on top of the first task in the list.
      So the gutter is the panel's width: ~115px for the longest label
      ("Collection"), which .rail-subs is capped at to keep the two in step. */
-  .page { padding-left: 120px; }
+  .page {
+    padding-left: 120px;
+    padding-top: calc(var(--space-4) + env(safe-area-inset-top));
+  }
 
   /* Just the icon column now — no gutter reserved beside it. The sub-page tabs
      slide out from behind this column when a section needs them and take no
@@ -228,6 +233,8 @@ h1, h2, h3 {
     color: var(--color-points);
   }
   .rail-points:hover { background: var(--bg-sunken); }
+  /* The contextual currency slot in grit clothes (design.md §2). */
+  .rail-points.grit { color: var(--accent-6-ink); }
 
   .rail-foot {
     display: flex;
@@ -551,7 +558,49 @@ h1, h2, h3 {
   .home-grid .card::before { left: var(--space-4); right: var(--space-4); }
 }
 
-.home-header { margin-bottom: var(--space-3); }
+/* ---------- the constant frame (design.md §2) ---------- */
+
+/*
+ * One row on every phone screen: contextual left slot (wordmark on Home,
+ * empty elsewhere), then the currency block, search and the settings door in
+ * fixed positions on the right. It sits OUTSIDE the scrolling .page, so it
+ * neither scrolls away nor slides with the section animation, and it owns
+ * the safe-area inset the page used to carry. The right cluster sets the
+ * height, so the row never changes size between sections.
+ */
+.top-frame {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4) 0;
+  padding-top: calc(var(--space-2) + env(safe-area-inset-top));
+}
+
+.top-frame .wordmark {
+  font-size: var(--size-2xl);
+  background-image: var(--gradient-rainbow-ink);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.frame-btn {
+  padding: var(--space-2);
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  border-radius: var(--radius-full);
+}
+.frame-btn:active { background: var(--bg-sunken); }
+
+/* ≥900px the rail is the frame; this row would be a second one. */
+@media (min-width: 900px) {
+  .top-frame { display: none; }
+}
 
 /* The greeting sits between the wordmark and the cards. Display face for the
    hello so it reads as a heading rather than as another card's label. */
@@ -576,26 +625,6 @@ h1, h2, h3 {
   min-height: 1.5em;
 }
 
-.home-header .wordmark {
-  font-size: var(--size-2xl);
-  background-image: var(--gradient-rainbow-ink);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.home-header .settings-btn {
-  padding: var(--space-2);
-  min-width: 44px;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  border-radius: var(--radius-full);
-}
-.home-header .settings-btn:active { background: var(--bg-sunken); }
-
 .header-points {
   text-align: right;
   line-height: var(--leading-tight);
@@ -610,6 +639,9 @@ h1, h2, h3 {
   align-items: center;
   gap: var(--space-1);
 }
+
+/* Same slot in grit clothes — hue and glyph differ, shape doesn't. */
+.header-points .balance.grit { color: var(--accent-6-ink); }
 
 /* the ✦-and-number pairing, wherever a balance or cost is shown */
 .points-tally {

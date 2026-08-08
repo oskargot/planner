@@ -5,6 +5,7 @@ import { loadSettings } from './db/db.js';
 import { startSync } from './db/sync.js';
 import { applyTheme } from './theme.js';
 import NavBar from './components/NavBar.jsx';
+import TopFrame from './components/TopFrame.jsx';
 import Icon from './components/Icon.jsx';
 import Toasts from './components/Toasts.jsx';
 import Palette from './components/Palette.jsx';
@@ -86,6 +87,10 @@ export default function App() {
           <Icon name="alert" size={16} /> {bootError}
         </div>
       )}
+      {/* Outside <main> on purpose: the frame must not scroll with a list or
+          slide with the section animation — it's the part that never moves
+          (design.md §2). Hidden at ≥900px, where the rail is the frame. */}
+      <TopFrame onSearch={() => setPaletteOpen(true)} />
       <main className="page" key={section.id} data-dir={dir}>
         <div className={`page-inner page-slide-${dir}`}>
           <Routes>

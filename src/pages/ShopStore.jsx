@@ -104,9 +104,6 @@ export default function ShopStore() {
       <h1 className="page-title">
         <span className="accent-dot" style={{ background: 'var(--accent-5)' }} />
         Store
-        <span className="points-tally" style={{ marginLeft: 'auto' }}>
-          <Icon name="spark" size={17} /> {balance ?? '…'}
-        </span>
       </h1>
 
       {/* The shopfront. Purely decorative — the page title above already says

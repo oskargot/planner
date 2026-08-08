@@ -50,9 +50,6 @@ export default function ShopLedger() {
       <h1 className="page-title">
         <span className="accent-dot" style={{ background: 'var(--accent-5)' }} />
         Ledger
-        <span className="points-tally" style={{ marginLeft: 'auto' }}>
-          <Icon name="spark" size={17} /> {balance ?? '…'}
-        </span>
       </h1>
 
       <div className="row wrap" style={{ marginBottom: 'var(--space-4)' }}>
