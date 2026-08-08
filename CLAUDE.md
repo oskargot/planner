@@ -13,13 +13,13 @@ summary. The old app being replaced was "mochi house" — its data was imported
 via `scripts/convert-mochi.mjs`.
 
 `docs/design.md` holds agreed design direction that isn't built yet — read it
-before changing navigation or page structure, because some of what's described
-below is scheduled to change there. A spec moves out of that file and into this
-one, compressed, once it ships. Currently specified and unbuilt: **nested
-dashboards** (§1), which turns every section root into a dashboard of its
-sub-pages and moves five routes down a level, and **the constant frame** (§2),
-which makes the phone's top row persistent and its currency readout contextual
-— points on five sections, grit on Rocks, never both at once.
+before changing navigation or page structure. A spec moves out of that file and
+into this one, compressed, once it ships; **nested dashboards** (§1) shipped
+and lives in the bullets below. Currently specified and unbuilt: **the
+constant frame** (§2), which makes the phone's top row persistent and its
+currency readout contextual — points on five sections, grit on Rocks, never
+both at once — and wants dashboards to eventually take section-shaped forms
+(Rocks as a workshop map) rather than card grids.
 
 ## Commands
 
@@ -125,8 +125,11 @@ src/
                      ColorPicker (itemAccent helper lives here),
                      Icon (the whole inline-SVG glyph set),
                      Palette (⌘K), Toasts (the undo rail),
-                     Gacha (the task gacha machine on the To Do page; the
-                     economics live in actions.js, this is only the reveal)
+                     MiniMonth (the heat calendar Home and the Habits
+                     dashboard share),
+                     Gacha (the task gacha machine on the Tasks dashboard;
+                     the economics live in actions.js, this is only the
+                     reveal)
     mine.js          the mine's stored half: chunk bitmasks, dig/extract,
                      prestige reset. Spends grit through tumbler.js's addGrit
                      rather than writing tumbler_ledger itself.
@@ -138,7 +141,9 @@ src/
     board.js         pure: an infinite minesweeper board as a hash of
                      (seed, x, y). No grid is ever generated or stored.
   pages/             one file per screen — EXCEPT Studio.jsx, which is both
-                     /studio and /studio/p/:id (see the two-pane note below)
+                     /studio/active and /studio/p/:id (see the two-pane note
+                     below). The five *Dash.jsx files are the section
+                     dashboards (design.md §1)
 server/
   index.js           GET/POST /api/sync, LWW upserts, serves dist/, cache
                      headers, additive column migrations (ensureColumn)
@@ -394,8 +399,9 @@ odds. If a change would create a reason to feel late, it's the wrong change.
 - The gacha is brand new and untuned: pool 1/2/3/5/8/13, uniform draw. Rows
   deliberately don't show a gacha task's worth (same set-once rule as size);
   it's in the editor, the detail pane, and the Done list's +N chip. The
-  machine sits under the add-task box on the To Do page — Oskar floated
-  reorganizing the tabs' home pages afterwards, so its placement may move.
+  machine lives on the Tasks dashboard — "present on its home page" was the
+  original request, and the dashboard is now the section's home. It spent one
+  commit under the To Do page's add box first.
 - The Tasks toolbar takes two rows on a 390px phone. Acceptable for now; if it
   annoys, the group chips are the half to hide behind a toggle.
 - Home habits calendar shows the calendar month; a rolling ~5-week window
@@ -423,6 +429,33 @@ odds. If a change would create a reason to feel late, it's the wrong change.
   `.box-name` clamps an inner `<span>`.
 - Oskar picked the rainbow ripple for the tap effect; the sparkle-stars and
   bubble variants were the runners-up if he wants to swap.
+- **Every section root is a dashboard** (design.md §1, shipped). Home is five
+  cards, one per section — Chores folded into the Habits digest and Inventory
+  into Shop's, because a Home card for a sub-page breaks the rule below. A
+  section root is one card per sub-page, and the pages moved down a level:
+  `/tasks/todo`, `/habits/today`, `/studio/active`, `/shop/store`,
+  `/tumbler/barrels`. No redirects — old root bookmarks land on the dashboard,
+  which is graceful, not broken.
+  - **The one-level-down rule: a dashboard summarises one level down, never
+    two.** Every card says something true about its page (a count, a name, the
+    heat grid, "last finished 3d ago") and is the door to it; a card that's
+    just a labelled door means the design is wrong, not the card.
+  - **Interaction stays minimal**: habit ticks, task completes, chore checks
+    and project touches — what Home already allowed — plus the gacha, which
+    Oskar asked for on the Tasks home. Everything else shows on the card and
+    acts on the page. Barrels are read-only here on purpose: opening one has
+    a reveal, and the reveal lives on its page.
+  - Tapping a section icon — including the section you're already in — goes to
+    its dashboard; that's the way back up, so the dashboard needs no tab of its
+    own and isn't one ("Overview" would be chrome standing in for a tap you
+    already have). The sub-tab rows are unchanged.
+  - `sectionPath()` is just `section.path` now. A nav child can carry `also`
+    (extra path prefixes for highlighting — `/studio/p` belongs to Active).
+    The `n` shortcut goes to `/tasks/todo`, where the add box is.
+  - Wide screens: a dashboard is two explicit `.dash-col` columns, left column
+    first in the DOM (that's the phone reading order). Columns as grid items
+    rather than per-card `grid-column` (Home's technique) because a tall live
+    card sharing grid rows with short neighbours opens gaps under them.
 - Nav is six sections, and the accent arithmetic finally works out: Home 1,
   Tasks 2, Habits 3, Studio 4, Shop 5, Rocks 6, one hue each. Two moves got it
   there, both on request:

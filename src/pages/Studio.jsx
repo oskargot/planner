@@ -53,7 +53,7 @@ export default function Studio() {
   const selectedId = id ?? null;
 
   if (!wide && selectedId) {
-    return <ProjectPanel id={selectedId} onGone={() => navigate('/studio')} standalone />;
+    return <ProjectPanel id={selectedId} onGone={() => navigate('/studio/active')} standalone />;
   }
 
   const list = (
@@ -96,7 +96,7 @@ export default function Studio() {
               <ProjectPanel
                 key={selectedId}
                 id={selectedId}
-                onGone={() => navigate('/studio')}
+                onGone={() => navigate('/studio/active')}
               />
             ) : (
               <div className="split-empty">
@@ -291,7 +291,7 @@ export function ProjectPanel({ id, onGone, standalone = false }) {
   if (!project || project.deleted) {
     return (
       <p className="empty">
-        Project not found. <Link to="/studio">Back to Studio</Link>
+        Project not found. <Link to="/studio/active">Back to Studio</Link>
       </p>
     );
   }

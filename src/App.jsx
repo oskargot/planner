@@ -11,6 +11,11 @@ import Palette from './components/Palette.jsx';
 
 import Home from './pages/Home.jsx';
 import Stats from './pages/Stats.jsx';
+import TasksDash from './pages/TasksDash.jsx';
+import HabitsDash from './pages/HabitsDash.jsx';
+import StudioDash from './pages/StudioDash.jsx';
+import ShopDash from './pages/ShopDash.jsx';
+import RocksDash from './pages/RocksDash.jsx';
 import Tasks from './pages/Tasks.jsx';
 import TasksDone from './pages/TasksDone.jsx';
 import HabitsToday from './pages/HabitsToday.jsx';
@@ -89,27 +94,36 @@ export default function App() {
                 the landing screen. It lives with the ledger now. */}
             <Route path="/stats" element={<Navigate to="/settings/stats" replace />} />
             <Route path="/settings/stats" element={<Stats />} />
-            <Route path="/tasks" element={<Tasks />} />
+            {/* Section roots are dashboards (design.md §1); the pages that
+                used to live there moved down one. Old bookmarks to a root
+                land on the dashboard — graceful, so no redirects. */}
+            <Route path="/tasks" element={<TasksDash />} />
+            <Route path="/tasks/todo" element={<Tasks />} />
             <Route path="/tasks/done" element={<TasksDone />} />
-            <Route path="/habits" element={<HabitsToday />} />
+            <Route path="/habits" element={<HabitsDash />} />
+            <Route path="/habits/today" element={<HabitsToday />} />
             <Route path="/habits/month" element={<HabitsMonth />} />
             <Route path="/habits/archived" element={<HabitsArchived />} />
             {/* Chores moved under Habits — same kind of thing, two rhythms.
                 The old top-level address still lands. */}
             <Route path="/habits/chores" element={<Chores />} />
             <Route path="/chores" element={<Navigate to="/habits/chores" replace />} />
-            <Route path="/studio" element={<Studio />} />
+            <Route path="/studio" element={<StudioDash />} />
+            <Route path="/studio/active" element={<Studio />} />
             <Route path="/studio/archived" element={<StudioArchived />} />
-            {/* Same component as /studio: on a phone it becomes the page, on
-                a wide screen it selects into the pane beside the list. */}
+            {/* Same component as /studio/active: on a phone it becomes the
+                page, on a wide screen it selects into the pane beside the
+                list. */}
             <Route path="/studio/p/:id" element={<Studio />} />
-            <Route path="/shop" element={<ShopStore />} />
+            <Route path="/shop" element={<ShopDash />} />
+            <Route path="/shop/store" element={<ShopStore />} />
             <Route path="/shop/inventory" element={<ShopInventory />} />
             {/* The ledger lives under Settings now. Anything bookmarked or
                 linked at the old address still lands on it. */}
             <Route path="/shop/ledger" element={<Navigate to="/settings/ledger" replace />} />
             <Route path="/settings/ledger" element={<ShopLedger />} />
-            <Route path="/tumbler" element={<Tumbler />} />
+            <Route path="/tumbler" element={<RocksDash />} />
+            <Route path="/tumbler/barrels" element={<Tumbler />} />
             <Route path="/tumbler/mine" element={<Mine />} />
             <Route path="/tumbler/shelf" element={<TumblerShelf />} />
             <Route path="/tumbler/collection" element={<TumblerCollection />} />
@@ -166,10 +180,11 @@ function useShortcuts({ openPalette, enabled }) {
       }
       if (e.key === 'n') {
         e.preventDefault();
-        // The timestamp is the point: navigating to /tasks when you're already
-        // there wouldn't re-run anything, and the purpose of the shortcut is
-        // to put the cursor in the box.
-        navigate('/tasks', { state: { focusAdd: Date.now() } });
+        // Straight to the To Do page, not the Tasks dashboard — the whole job
+        // of this shortcut is putting the cursor in the add box, and the
+        // dashboard doesn't have one. The timestamp is the point: navigating
+        // to a page you're already on wouldn't re-run anything.
+        navigate('/tasks/todo', { state: { focusAdd: Date.now() } });
       }
     }
     window.addEventListener('keydown', onKey);

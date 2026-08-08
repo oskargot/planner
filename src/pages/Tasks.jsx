@@ -24,7 +24,6 @@ import Check from '../components/Check.jsx';
 import ColorPicker, { itemAccent } from '../components/ColorPicker.jsx';
 import useLongPress from '../useLongPress.js';
 import Icon from '../components/Icon.jsx';
-import Gacha from '../components/Gacha.jsx';
 
 // Sizes get their own soft tints: bigger = warmer.
 const SIZE_ACCENT = { S: 4, M: 3, L: 1 };
@@ -126,9 +125,6 @@ export default function Tasks() {
   const list = (
     <>
       <AddTask inputRef={addRef} />
-      {/* The machine sits under the add box, not above it: typing a task is
-          the everyday path and keeps first reach; the gacha is the treat. */}
-      <Gacha />
       <Toolbar
         query={query}
         setQuery={setQuery}

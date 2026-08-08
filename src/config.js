@@ -5,6 +5,14 @@ export const APP_NAME = 'Planner';
 // Nav is a declarative config (§6). Adding a page = adding an entry here
 // plus a route in App.jsx. Each section owns one of the six rainbow accents.
 // `icon` is a name in components/Icon.jsx, not an emoji — see the note there.
+//
+// Every section's `path` is its DASHBOARD (design.md §1): tapping a section
+// lands on a screen of cards, one per sub-page, and the pages themselves live
+// one level down. The dashboard is deliberately not in `children` — it isn't a
+// tab, it's where the section icon takes you, including from inside the
+// section (that's the way back up). A child may carry `also`: extra path
+// prefixes that belong to it for nav-highlighting purposes (the project detail
+// pages are Active's, but live under /studio/p/).
 export const NAV = [
   // Home has no sub-pages, and shouldn't: it's the landing screen, and a
   // sub-tab row on it is a row of chrome you see on every single visit. Stats
@@ -12,9 +20,9 @@ export const NAV = [
   // with the ledger now, which is where the other look-don't-touch page is.
   { id: 'home', label: 'Home', icon: 'home', path: '/', accent: 1 },
   {
-    id: 'tasks', label: 'Tasks', icon: 'tasks', accent: 2,
+    id: 'tasks', label: 'Tasks', icon: 'tasks', path: '/tasks', accent: 2,
     children: [
-      { id: 'open', label: 'To Do', path: '/tasks' },
+      { id: 'open', label: 'To Do', path: '/tasks/todo' },
       { id: 'done', label: 'Done', path: '/tasks/done' },
     ],
   },
@@ -29,9 +37,9 @@ export const NAV = [
     // It also settles the accent arithmetic: Chores was holding the sixth
     // accent, which belonged to Rocks before the two got folded together.
     // Six sections, six accents, one hue each again.
-    id: 'habits', label: 'Habits', icon: 'habits', accent: 3,
+    id: 'habits', label: 'Habits', icon: 'habits', path: '/habits', accent: 3,
     children: [
-      { id: 'today', label: 'Today', path: '/habits' },
+      { id: 'today', label: 'Today', path: '/habits/today' },
       // Today and Month are one list at two zoom levels, so nothing goes
       // between them.
       { id: 'month', label: 'Month', path: '/habits/month' },
@@ -42,9 +50,9 @@ export const NAV = [
     ],
   },
   {
-    id: 'studio', label: 'Studio', icon: 'studio', accent: 4,
+    id: 'studio', label: 'Studio', icon: 'studio', path: '/studio', accent: 4,
     children: [
-      { id: 'active', label: 'Active', path: '/studio' },
+      { id: 'active', label: 'Active', path: '/studio/active', also: ['/studio/p'] },
       { id: 'archived', label: 'Archived', path: '/studio/archived' },
     ],
   },
@@ -57,9 +65,9 @@ export const NAV = [
     //
     // Ledger stays under Settings for the same reason it left these tabs:
     // it's an audit log, not a place you browse.
-    id: 'shop', label: 'Shop', icon: 'shop', accent: 5,
+    id: 'shop', label: 'Shop', icon: 'shop', path: '/shop', accent: 5,
     children: [
-      { id: 'store', label: 'Store', path: '/shop' },
+      { id: 'store', label: 'Store', path: '/shop/store' },
       { id: 'inventory', label: 'Inventory', path: '/shop/inventory' },
     ],
   },
@@ -70,9 +78,9 @@ export const NAV = [
   // Paths stay under /tumbler: they're invisible in a standalone PWA, and
   // renaming them would churn every bookmark and screenshot route for nothing.
   {
-    id: 'tumbler', label: 'Rocks', icon: 'gem', accent: 6,
+    id: 'tumbler', label: 'Rocks', icon: 'gem', path: '/tumbler', accent: 6,
     children: [
-      { id: 'barrels', label: 'Barrels', path: '/tumbler' },
+      { id: 'barrels', label: 'Barrels', path: '/tumbler/barrels' },
       // The active half of the rock economy, next to the idle half.
       { id: 'mine', label: 'Mine', path: '/tumbler/mine' },
       { id: 'shelf', label: 'Shelf', path: '/tumbler/shelf' },
@@ -81,28 +89,25 @@ export const NAV = [
   },
 ];
 
-// A section's "home path" — its own path or its first child's.
+// A section's home path — its dashboard. Every section carries a real `path`
+// now, so the old ?? children[0].path fallback is gone (design.md §1).
 export function sectionPath(section) {
-  return section.path ?? section.children?.[0]?.path ?? '/';
+  return section.path;
 }
 
 // Longest-prefix match of a path against the nav tree.
-// Returns { section, child } (child may be null).
+// Returns { section, child } (child may be null — the section's dashboard).
 export function matchNav(pathname) {
   let best = { section: NAV[0], child: null, len: -1 };
+  const hit = (path) =>
+    path === '/' ? pathname === '/' : pathname === path || pathname.startsWith(path + '/');
   for (const section of NAV) {
-    const candidates = section.children
-      ? section.children.map((c) => ({ child: c, path: c.path }))
-      : [{ child: null, path: section.path }];
-    for (const { child, path } of candidates) {
-      const matches = path === '/' ? pathname === '/' : pathname === path || pathname.startsWith(path + '/');
-      if (matches && path.length > best.len) best = { section, child, len: path.length };
+    const candidates = [{ child: null, path: section.path }];
+    for (const c of section.children ?? []) {
+      for (const path of [c.path, ...(c.also ?? [])]) candidates.push({ child: c, path });
     }
-    // Section prefix (e.g. /studio/p/abc under studio) even if no child matches exactly.
-    const base = sectionPath(section);
-    const root = base.split('/').slice(0, 2).join('/') || '/';
-    if (root !== '/' && (pathname === root || pathname.startsWith(root + '/')) && best.len < 0) {
-      best = { section, child: section.children?.[0] ?? null, len: 0 };
+    for (const { child, path } of candidates) {
+      if (hit(path) && path.length > best.len) best = { section, child, len: path.length };
     }
   }
   return { section: best.section, child: best.child };

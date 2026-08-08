@@ -3,13 +3,11 @@ import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db.js';
 import { checkHabit, uncheckHabit, touchProject, checkChore, SIZE_POINTS } from '../db/actions.js';
-import { logicalDay, parseDay, monthLabel } from '../db/time.js';
+import { logicalDay } from '../db/time.js';
 import {
   useBalance,
   useEarnedToday,
   useGreetingState,
-  habitDayStats,
-  heatVar,
   staleness,
   useChores,
   choreStatus,
@@ -21,6 +19,7 @@ import { floatPoints, confettiBurst } from '../fx.js';
 import { APP_NAME } from '../config.js';
 import Card from '../components/Card.jsx';
 import Check from '../components/Check.jsx';
+import MiniMonth from '../components/MiniMonth.jsx';
 import Icon from '../components/Icon.jsx';
 import { itemAccent } from '../components/ColorPicker.jsx';
 import { completeWithUndo } from './Tasks.jsx';
@@ -52,16 +51,19 @@ export default function Home() {
         </div>
       </header>
       <Greeting />
-      {/* DOM order is the phone's: one full-width card each, habits → tasks
-          → studio → rocks. The wide layout re-columns them in CSS rather than
-          reordering here, so the narrow reading order stays intact. */}
+      {/* Five cards, one per section (design.md §1): Chores folded into the
+          Habits digest and Inventory into the Shop one, because a Home card
+          for something one level below a section breaks the one-level-down
+          rule. DOM order is the phone's — one full-width card each, habits →
+          tasks → studio → rocks → shop. The wide layout re-columns them in
+          CSS rather than reordering here, so the narrow reading order stays
+          intact. */}
       <div className="home-grid">
         <HabitsCard />
         <TasksCard />
-        <ChoresCard />
         <StudioCard />
         <TumblerCard />
-        <InventoryCard />
+        <ShopCard />
       </div>
     </>
   );
@@ -94,10 +96,13 @@ function Greeting() {
   );
 }
 
-// "Habits extended": the month calendar sits left with today's checkable rows
-// beside it, so the card reads as one glance-and-tap unit. It splits at every
-// width now — it used to stack above 700px, when Habits was one of three
-// columns and simply had nowhere to put the list.
+/*
+ * The Habits section digest: the month calendar sits left with today's
+ * checkable rows beside it, so the card reads as one glance-and-tap unit —
+ * and any chore that's come ready joins the rows, because chores are a
+ * sub-page of Habits and a Home card summarises the SECTION (design.md §1's
+ * one-level-down rule; the separate Chores card broke it).
+ */
 function HabitsCard() {
   const today = logicalDay();
   const habits = useLiveQuery(
@@ -112,15 +117,10 @@ function HabitsCard() {
   );
   const doneIds = new Set(entries.map((e) => e.habit_id));
 
-  const d = parseDay(today);
-  const year = d.getFullYear();
-  const month = d.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const days = Array.from({ length: daysInMonth }, (_, i) => {
-    return `${year}-${String(month + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`;
-  });
-  const offset = (new Date(year, month, 1).getDay() + 6) % 7; // Monday-first
-  const stats = useLiveQuery(() => habitDayStats(days), [today], null);
+  const { chores, lastDone } = useChores();
+  const readyChores = chores.filter(
+    (c) => choreStatus(c, lastDone.get(c.id), today).state === 'ready'
+  );
 
   async function toggle(h, e) {
     if (doneIds.has(h.id)) await uncheckHabit(h.id, today);
@@ -131,40 +131,15 @@ function HabitsCard() {
     }
   }
 
+  async function completeChore(chore, e) {
+    floatPoints(e.currentTarget, SIZE_POINTS[chore.size] ?? 0);
+    await checkChore(chore, today);
+  }
+
   return (
     <Card title="Habits" accent={3} to="/habits" className="card-habits">
       <div className="habits-split">
-        <Link to="/habits/month" className="mini-month" aria-label="Open month view">
-          <div className="month-label">{monthLabel(year, month)}</div>
-          <div className="heat-grid">
-            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((w, i) => (
-              <div key={`w${i}`} className="heat-weekday">
-                {w}
-              </div>
-            ))}
-            {Array.from({ length: offset }, (_, i) => (
-              <div key={`pad${i}`} className="heat-cell outside" />
-            ))}
-            {days.map((day) => {
-              const future = day > today;
-              const cls = `heat-cell${future ? ' future' : ''}${day === today ? ' today' : ''}`;
-              return (
-                <div
-                  key={day}
-                  className={cls}
-                  title={day}
-                  style={{
-                    background: future
-                      ? undefined
-                      : heatVar(stats?.get(day)?.ratio ?? 0, stats?.get(day)?.done ?? 0),
-                  }}
-                >
-                  {Number(day.slice(-2))}
-                </div>
-              );
-            })}
-          </div>
-        </Link>
+        <MiniMonth />
         <div className="habit-minis">
           {habits.length === 0 && <p className="empty">No habits yet.</p>}
           {habits.map((h, i) => (
@@ -182,6 +157,28 @@ function HabitsCard() {
               </span>
             </div>
           ))}
+          {/* Only when something is ready — a list of resting cooldowns is
+              not news, so a quiet day costs the card nothing. */}
+          {readyChores.length > 0 && (
+            <>
+              <Link to="/habits/chores" className="home-chore-label muted small">
+                chores ready
+              </Link>
+              {readyChores.map((c) => (
+                <div className="habit-mini" key={c.id}>
+                  <Check
+                    on={false}
+                    accent={itemAccent(c, chores.indexOf(c))}
+                    round
+                    onClick={(e) => completeChore(c, e)}
+                    label={c.name}
+                  />
+                  {c.emoji && <span className="habit-mini-emoji">{c.emoji}</span>}
+                  <span className="habit-mini-name">{c.name}</span>
+                </div>
+              ))}
+            </>
+          )}
         </div>
       </div>
     </Card>
@@ -305,63 +302,47 @@ function TumblerCard() {
 }
 
 /*
- * Chores, only when something is ready. Like the inventory card it earns its
- * row by having news — a list of resting cooldowns is not news, so a quiet
- * day costs Home nothing.
+ * The Shop section digest: what's within reach of the balance, and anything
+ * bought but not yet collected. Replaces the old Inventory card — a Home
+ * card for a sub-page broke the one-level-down rule, and "N within reach" is
+ * the section-level fact the old card never said.
  */
-function ChoresCard() {
-  const today = logicalDay();
-  const { chores, lastDone } = useChores();
-  const ready = chores.filter(
-    (c) => choreStatus(c, lastDone.get(c.id), today).state === 'ready'
+function ShopCard() {
+  const balance = useBalance();
+  const items = useLiveQuery(
+    () => db.shop_items.filter((i) => !i.deleted && !i.sold_out).toArray(),
+    [],
+    []
   );
-  if (ready.length === 0) return null;
-
-  async function complete(chore, e) {
-    floatPoints(e.currentTarget, SIZE_POINTS[chore.size] ?? 0);
-    await checkChore(chore, today);
-  }
-
-  return (
-    <Card title={`Chores · ${ready.length} ready`} accent={3} to="/habits/chores" className="card-chores">
-      <div className="stack-sm">
-        {ready.map((c, i) => (
-          <div className="row" key={c.id}>
-            <span style={{ display: 'inline-flex' }}>
-              <Check
-                on={false}
-                accent={itemAccent(c, chores.indexOf(c))}
-                round
-                onClick={(e) => complete(c, e)}
-                label={c.name}
-              />
-            </span>
-            {c.emoji && <span>{c.emoji}</span>}
-            <span className="grow">{c.name}</span>
-          </div>
-        ))}
-      </div>
-    </Card>
-  );
-}
-
-function InventoryCard() {
   const unredeemed = useLiveQuery(
     () => db.purchases.filter((p) => !p.deleted && !p.redeemed_at).toArray(),
     [],
     []
   );
-  if (unredeemed.length === 0) return null;
+  const affordable = balance == null ? 0 : items.filter((i) => i.cost <= balance).length;
+
   return (
-    <Card title="Inventory" accent={1} to="/shop/inventory" className="card-inventory">
-      <div className="stack-sm">
-        {unredeemed.map((p) => (
-          <div className="row" key={p.id}>
-            <Icon name="box" size={18} />
-            <span className="grow">{p.name_snapshot}</span>
-          </div>
-        ))}
-      </div>
+    <Card title="Shop" accent={5} to="/shop" className="card-shop">
+      {items.length > 0 && (
+        <p className="muted small">
+          {affordable
+            ? `${affordable} of ${items.length} within reach.`
+            : 'Nothing within reach yet — keep earning.'}
+        </p>
+      )}
+      {items.length === 0 && unredeemed.length === 0 && (
+        <p className="empty">The shelves are bare.</p>
+      )}
+      {unredeemed.length > 0 && (
+        <div className="stack-sm" style={{ marginTop: 'var(--space-2)' }}>
+          {unredeemed.map((p) => (
+            <div className="row" key={p.id}>
+              <Icon name="box" size={18} />
+              <span className="grow">{p.name_snapshot}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }

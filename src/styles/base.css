@@ -500,10 +500,49 @@ h1, h2, h3 {
   }
   .home-grid > .card-habits { grid-column: 1; }
   .home-grid > .card-studio { grid-column: 1; }
-  .home-grid > .card-inventory { grid-column: 1; }
+  .home-grid > .card-shop { grid-column: 1; }
   .home-grid > .card-tasks { grid-column: 2; }
-  .home-grid > .card-chores { grid-column: 2; }
   .home-grid > .card-tumbler { grid-column: 2; }
+}
+
+/* The chores-ready divider inside the habits card — a quiet label, and a
+   door to the Chores page for the row that follows it. */
+.home-chore-label {
+  display: block;
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: var(--border-hairline);
+  text-decoration: none;
+}
+
+/* ---------- section dashboards ---------- */
+
+/*
+ * design.md §1: every section root is a dashboard of cards, one per sub-page.
+ * Phone: one card per row in the column DOM order. Wide: two explicit columns
+ * — each .dash-col is a grid item, so a tall live card (Today, To Do) can't
+ * open gaps under its short neighbours the way shared grid rows would.
+ * Reading order is the phone's: left column entirely, then right.
+ */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+}
+.dash-col {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+}
+.dash-col .card { margin-bottom: 0; }
+
+@media (min-width: 700px) {
+  .dash-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    align-items: start;
+  }
+  .dash-col { gap: var(--space-4); }
 }
 
 /* Reclaim the horizontal room the habits split needs on a small phone. */
