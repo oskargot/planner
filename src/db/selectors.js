@@ -2,7 +2,7 @@
 
 import { db } from './db.js';
 import { dayEndMs, logicalDay, daysBetween, addDays } from './time.js';
-import { SIZE_POINTS } from './actions.js';
+import { taskPoints } from './actions.js';
 import { barrelState, barrelsBySlot } from './tumbler.js';
 import { useLiveQuery } from 'dexie-react-hooks';
 
@@ -346,7 +346,7 @@ export function useStats() {
       const w = weeks.find((wk) => d >= wk.start && d <= wk.end);
       if (w) {
         w.count++;
-        w.points += SIZE_POINTS[t.size] ?? 0;
+        w.points += taskPoints(t);
       }
     }
     const weekPeak = Math.max(1, ...weeks.map((w) => w.count));

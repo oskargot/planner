@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS tasks (
   size        TEXT NOT NULL,
   notes       TEXT,
   color       TEXT,                -- accent index '1'..'6', NULL = auto
+  gacha_points INTEGER,            -- worth rolled by the gacha at creation;
+                                   -- NULL = an ordinary task, scored by size
   done_at     INTEGER,
   sort_order  REAL NOT NULL DEFAULT 0,
   created_at  INTEGER NOT NULL,

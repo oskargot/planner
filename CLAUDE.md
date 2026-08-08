@@ -67,9 +67,11 @@ troubleshooting in `deploy/README.md`.
 
 `main` is what Oskar pulls on jellybot, and it's kept fast-forwarded to
 whatever the current working branch is after each push. Current branch is
+`claude/planner-gacha-machine-task-61aau8` (the task gacha from mochi house,
+rebuilt); before it were
 `claude/planner-mining-organization-qnzqlh` (the nav reshuffle — chores under
 habits, Rocks split back out of Shop — plus the workshop split and the
-extraction-cost fix); before it were
+extraction-cost fix),
 `claude/planner-open-count-bug-n5js09` (the stuck-barrel duplicate fix, then
 chores + the shop/rocks nav fold),
 `claude/planner-app-revamp-planning-ll1wyu` (the iPad revamp: dark theme,
@@ -80,8 +82,8 @@ tumbler), `claude/iphone-planner-redesign-p6fw8r` (the iPhone pass) and
 `claude/oskar-planner-v1-wqpzus` (v1). Both pushes every time:
 
 ```bash
-git push -u origin claude/planner-mining-organization-qnzqlh
-git push origin claude/planner-mining-organization-qnzqlh:main
+git push -u origin claude/planner-gacha-machine-task-61aau8
+git push origin claude/planner-gacha-machine-task-61aau8:main
 ```
 
 ## Architecture map
@@ -113,7 +115,9 @@ src/
                      and search/gear at the foot), Card, Check,
                      ColorPicker (itemAccent helper lives here),
                      Icon (the whole inline-SVG glyph set),
-                     Palette (⌘K), Toasts (the undo rail)
+                     Palette (⌘K), Toasts (the undo rail),
+                     Gacha (the task gacha machine on the To Do page; the
+                     economics live in actions.js, this is only the reveal)
     mine.js          the mine's stored half: chunk bitmasks, dig/extract,
                      prestige reset. Spends grit through tumbler.js's addGrit
                      rather than writing tumbler_ledger itself.
@@ -162,6 +166,17 @@ scripts/
   - `mintGem` in db/tumbler.js is the only place a gem row is created —
     barrels, fusion and the mine all go through it — which is what makes the
     bounty impossible to forget at one of three call sites.
+- **The gacha rolls a task's worth ONCE, at creation, and stores it**
+  (`gacha_points` on the row) — the same rule that fixes a barrel's stone at
+  load time: sync shows every device the same worth, and nothing re-rolls on
+  completion. The worth is locked (the editor shows a chip where the size
+  picker would be) because an editable roll is theater. Rolling pays nothing;
+  the points land through `completeTask` like any other task, so the crank
+  can't be farmed. `GACHA_POOL` is 1/2/3/5/8/13 — mean ~5.3, a whisker over a
+  Medium, so the machine is a gamble, not a raise. A gacha task still gets a
+  `size` (the nearest bucket) so filters and grouping keep working. Reroll by
+  delete-and-retype is possible and deliberately unguarded — same honesty
+  wall as marking every task Large.
 - **Milestones and subtasks are worth 0 points** (anti-point-farming,
   deliberate). Both are structure inside something else; paying per subtask
   would make "one task, ten subtasks" the cheapest way to farm the ledger.
@@ -367,6 +382,11 @@ odds. If a change would create a reason to feel late, it's the wrong change.
   collection squares more slowly than it looks like it should.
 - Task rows no longer show a size chip anywhere (list or Home) — the size is
   in the editor and the detail pane only. It's something you set once.
+- The gacha is brand new and untuned: pool 1/2/3/5/8/13, uniform draw. Rows
+  deliberately don't show a gacha task's worth (same set-once rule as size);
+  it's in the editor, the detail pane, and the Done list's +N chip. The
+  machine sits under the add-task box on the To Do page — Oskar floated
+  reorganizing the tabs' home pages afterwards, so its placement may move.
 - The Tasks toolbar takes two rows on a 390px phone. Acceptable for now; if it
   annoys, the group chips are the half to hide behind a toggle.
 - Home habits calendar shows the calendar month; a rolling ~5-week window

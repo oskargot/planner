@@ -309,6 +309,16 @@ for (const [vpName, viewport, dsf] of VIEWPORTS) {
   await page.waitForTimeout(500);
   await page.screenshot({ path: join(OUT, `${vpName}-toast.png`) });
 
+  // The gacha, pulled. Types a task and pulls the crank, then waits out the
+  // shake — the shot is the prize in the tray, which is also the only proof
+  // the whole roll-store-reveal path runs.
+  await page.goto(`http://localhost:${PORT}/tasks`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  await page.locator('.gacha input').fill('Descale the kettle');
+  await page.locator('.gacha .btn.primary').click();
+  await page.waitForTimeout(1400);
+  await page.screenshot({ path: join(OUT, `${vpName}-gacha-reveal.png`) });
+
   // The mine, dug in. A fresh board is a blank grid of covered stone, which
   // says nothing about the game — so drive the real gestures and let the real
   // flood fill open it up. Clicking is a tap, which digs; the spread is wide
