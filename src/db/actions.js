@@ -9,6 +9,21 @@ import { SPECIES_BY_KEY, gemLabel } from '../tumbler/gems.js';
 
 export const SIZE_POINTS = { S: 3, M: 5, L: 8 };
 
+/*
+ * The gacha pool. Mochi house's machine, rebuilt on planner rules: feed it a
+ * task and it rolls what the task will be WORTH from these preset scores.
+ * The mean is ~5.3 — a whisker over a Medium — so the gacha is a gamble, not
+ * a raise: the 13 only exists because the 1 does. Rolling pays nothing; the
+ * points land through completeTask like any other task, so pulling the crank
+ * all day earns exactly as much as typing tasks all day.
+ */
+export const GACHA_POOL = [1, 2, 3, 5, 8, 13];
+
+// What completing a task pays: the gacha roll if it has one, else its size.
+export function taskPoints(task) {
+  return task.gacha_points ?? SIZE_POINTS[task.size] ?? 0;
+}
+
 // ---- ledger ----
 
 export async function addLedger({ delta, reason, sourceType = null, sourceId = null, day, note = null }) {
@@ -61,6 +76,33 @@ export async function addTask(title, size, notes = null, color = null) {
   });
 }
 
+/*
+ * A task from the gacha machine. The roll happens HERE, once, and is stored on
+ * the row — the same rule that fixes a barrel's stone at load time: syncing
+ * the task to another device shows the same worth, and there is no moment
+ * where completing it re-rolls anything. The worth is locked from then on
+ * (the editor shows a chip, not a size picker); rerolling by delete-and-retype
+ * is possible and unguarded, the same way marking every task Large is possible
+ * and unguarded — single user, honesty is the wall.
+ *
+ * `size` still gets a value — the nearest bucket — so the size filters and
+ * groups keep meaning something. The exact worth is gacha_points.
+ */
+export async function addGachaTask(title) {
+  const points = GACHA_POOL[Math.floor(Math.random() * GACHA_POOL.length)];
+  const size = points <= 3 ? 'S' : points <= 5 ? 'M' : 'L';
+  const first = await db.tasks.orderBy('sort_order').first();
+  return insertRow('tasks', {
+    title,
+    size,
+    gacha_points: points,
+    notes: null,
+    color: null,
+    done_at: null,
+    sort_order: (first?.sort_order ?? 1) - 1,
+  });
+}
+
 export async function updateTask(id, fields) {
   await updateRow('tasks', id, fields);
 }
@@ -69,7 +111,7 @@ export async function completeTask(task) {
   // Re-read so a double-tap can't award twice.
   const fresh = await db.tasks.get(task.id);
   if (!fresh || fresh.deleted || fresh.done_at) return;
-  const pts = SIZE_POINTS[fresh.size] ?? 0;
+  const pts = taskPoints(fresh);
   await updateRow('tasks', task.id, { done_at: Date.now() });
   await addLedger({ delta: pts, reason: 'task', sourceType: 'tasks', sourceId: task.id, day: logicalDay(), note: fresh.title });
 }
@@ -109,7 +151,7 @@ export async function restoreTask(task) {
   }
   await updateRow('tasks', task.id, { deleted: 0 });
   if (task.done_at) {
-    const pts = SIZE_POINTS[task.size] ?? 0;
+    const pts = taskPoints(task);
     if (pts) {
       await addLedger({
         delta: pts,

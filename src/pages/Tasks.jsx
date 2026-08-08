@@ -14,6 +14,7 @@ import {
   deleteSubtask,
   moveRow,
   SIZE_POINTS,
+  taskPoints,
 } from '../db/actions.js';
 import { logicalDay, daysBetween } from '../db/time.js';
 import { floatPoints } from '../fx.js';
@@ -334,6 +335,19 @@ export function SizePicker({ value, onChange }) {
   );
 }
 
+/*
+ * The locked worth of a gacha task, shown where the size picker would be.
+ * Locked on purpose: an editable worth would make the machine theater. The
+ * roll is the roll.
+ */
+function GachaWorth({ task }) {
+  return (
+    <span className="size-chip gacha-worth" title="Rolled by the gacha — can't be changed">
+      <Icon name="capsule" size={13} /> worth {task.gacha_points}
+    </span>
+  );
+}
+
 export function SizeChip({ size, done = false }) {
   return (
     <span
@@ -354,7 +368,7 @@ export function SizeChip({ size, done = false }) {
  * tapped rather than after a database round trip.
  */
 export async function completeWithUndo(task, el) {
-  floatPoints(el, SIZE_POINTS[task.size]);
+  floatPoints(el, taskPoints(task));
   await completeTask(task);
   showToast(`Completed “${task.title}”`, { undo: () => uncompleteTask(task) });
 }
@@ -526,7 +540,11 @@ function TaskDetail({ task, subs, accent, siblings, onGone }) {
       />
 
       <div className="row spread wrap" style={{ margin: 'var(--space-3) 0' }}>
-        <SizePicker value={task.size} onChange={(size) => updateTask(task.id, { size })} />
+        {task.gacha_points != null ? (
+          <GachaWorth task={task} />
+        ) : (
+          <SizePicker value={task.size} onChange={(size) => updateTask(task.id, { size })} />
+        )}
         <ColorPicker value={task.color ?? null} onChange={(color) => updateTask(task.id, { color })} />
       </div>
 
@@ -589,7 +607,11 @@ function TaskEditor({ task, close }) {
         onChange={(e) => setNotes(e.target.value)}
       />
       <div className="row spread wrap">
-        <SizePicker value={size} onChange={setSize} />
+        {task.gacha_points != null ? (
+          <GachaWorth task={task} />
+        ) : (
+          <SizePicker value={size} onChange={setSize} />
+        )}
         <ColorPicker value={color} onChange={setColor} />
       </div>
       <div className="row spread">

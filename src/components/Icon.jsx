@@ -230,6 +230,14 @@ const ICONS = {
       <path d="M3.8 5.2h16.4l-6.4 7.6v6l-3.6 1.8v-7.8z" />
     </>
   ),
+  // A gacha capsule: circle with its seam. The seam dips slightly so it reads
+  // as a capsule and not as a "no entry" sign at small sizes.
+  capsule: (
+    <>
+      <circle cx="12" cy="12" r="8.2" />
+      <path d="M4.3 9.6c4.9 2.6 10.5 2.6 15.4 0" />
+    </>
+  ),
   // A broom: the chores tab. Handle to the upper right, head sweeping the
   // lower left, two bristle strokes so it reads at 22px.
   broom: (

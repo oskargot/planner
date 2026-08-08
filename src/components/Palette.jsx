@@ -140,7 +140,9 @@ export default function Palette({ open, close }) {
       out.push({
         kind: 'Habit', id: `habit-${h.id}`, label: `${h.emoji ? `${h.emoji} ` : ''}${h.name}`,
         icon: 'habits', accent: 3,
-        run: () => navigate(h.active ? '/habits' : '/habits/archived'),
+        // Pages, not dashboards (design.md §1): a result naming a specific
+        // habit should land on the list that holds it.
+        run: () => navigate(h.active ? '/habits/today' : '/habits/archived'),
       });
     }
     for (const p of projects.filter((p) => match(p.name)).slice(0, LIMIT_PER_GROUP)) {
@@ -153,7 +155,7 @@ export default function Palette({ open, close }) {
       out.push({
         kind: 'Shop', id: `item-${i.id}`, label: i.name, icon: 'shop', accent: 5,
         hint: `${i.cost}`,
-        run: () => navigate('/shop'),
+        run: () => navigate('/shop/store'),
       });
     }
 
@@ -164,7 +166,7 @@ export default function Palette({ open, close }) {
       run: async () => {
         await addTask(query.trim(), 'M');
         showToast(`Added “${query.trim()}”`);
-        navigate('/tasks');
+        navigate('/tasks/todo');
       },
     });
 

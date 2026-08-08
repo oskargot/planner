@@ -500,10 +500,49 @@ h1, h2, h3 {
   }
   .home-grid > .card-habits { grid-column: 1; }
   .home-grid > .card-studio { grid-column: 1; }
-  .home-grid > .card-inventory { grid-column: 1; }
+  .home-grid > .card-shop { grid-column: 1; }
   .home-grid > .card-tasks { grid-column: 2; }
-  .home-grid > .card-chores { grid-column: 2; }
   .home-grid > .card-tumbler { grid-column: 2; }
+}
+
+/* The chores-ready divider inside the habits card — a quiet label, and a
+   door to the Chores page for the row that follows it. */
+.home-chore-label {
+  display: block;
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: var(--border-hairline);
+  text-decoration: none;
+}
+
+/* ---------- section dashboards ---------- */
+
+/*
+ * design.md §1: every section root is a dashboard of cards, one per sub-page.
+ * Phone: one card per row in the column DOM order. Wide: two explicit columns
+ * — each .dash-col is a grid item, so a tall live card (Today, To Do) can't
+ * open gaps under its short neighbours the way shared grid rows would.
+ * Reading order is the phone's: left column entirely, then right.
+ */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+}
+.dash-col {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+}
+.dash-col .card { margin-bottom: 0; }
+
+@media (min-width: 700px) {
+  .dash-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    align-items: start;
+  }
+  .dash-col { gap: var(--space-4); }
 }
 
 /* Reclaim the horizontal room the habits split needs on a small phone. */
@@ -822,6 +861,137 @@ h1, h2, h3 {
   background: var(--bg-sunken);
   color: var(--text-secondary);
   flex-shrink: 0;
+}
+
+/* ---------- the task gacha ---------- */
+
+/*
+ * A squat capsule machine: glass dome of capsules on the left, controls on
+ * the right, prize tray under the dome. Built entirely from surface/accent
+ * tokens — under Mono the capsules go grey and the machine still says
+ * everything in text, which is the test.
+ */
+.gacha {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: var(--bg-surface);
+  border: var(--border-hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.gacha-machine {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.gacha-dome {
+  position: relative;
+  width: 76px;
+  height: 62px;
+  overflow: hidden;
+  background: var(--bg-surface-alt);
+  border: var(--border-hairline);
+  border-radius: 38px 38px var(--radius-sm) var(--radius-sm);
+}
+
+/* A capsule is two-tone: accent lid over a pale base, seam at the middle.
+   The gradient is decoration built from tokens; nothing rides on it. */
+.gacha-cap {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(180deg, var(--cap) 0 52%, var(--bg-surface) 52%);
+  border: var(--border-hairline);
+  box-shadow: var(--shadow-sm);
+}
+
+/* The heap. Hand-placed so it reads as settled, not tiled. */
+.cap-0 { left: 5px;  bottom: 2px; }
+.cap-1 { left: 26px; bottom: 4px;  rotate: -18deg; }
+.cap-2 { left: 47px; bottom: 2px;  rotate: 10deg; }
+.cap-3 { left: 15px; bottom: 21px; rotate: 24deg; }
+.cap-4 { left: 37px; bottom: 22px; rotate: -12deg; }
+.cap-5 { left: 26px; bottom: 39px; rotate: 6deg; }
+
+.gacha-machine.rolling .gacha-cap {
+  animation: gacha-jiggle 0.4s var(--ease-standard) infinite alternate;
+}
+.gacha-machine.rolling .cap-1,
+.gacha-machine.rolling .cap-3 { animation-delay: 90ms; }
+.gacha-machine.rolling .cap-2,
+.gacha-machine.rolling .cap-5 { animation-delay: 170ms; }
+
+@keyframes gacha-jiggle {
+  from { translate: 0 0;    rotate: -14deg; }
+  to   { translate: 0 -8px; rotate: 12deg; }
+}
+
+.gacha-tray {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  background: var(--bg-sunken);
+  border: var(--border-hairline);
+  border-radius: var(--radius-full);
+}
+
+/* The prize wears the soft accent with -ink text — the number has to be
+   readable, and the pale pastel top half stays behind it, not under it. */
+.gacha-prize {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, var(--cap) 0 52%, var(--bg-surface) 52%);
+  border: var(--border-hairline);
+  border-radius: var(--radius-full);
+  font-family: var(--font-display);
+  font-size: var(--size-sm);
+  font-weight: var(--weight-bold);
+  animation: gacha-drop var(--dur-slow) var(--ease-bounce);
+}
+
+@keyframes gacha-drop {
+  from { translate: 0 -26px; scale: 0.5; opacity: 0; }
+  to   { translate: 0 0;     scale: 1;   opacity: 1; }
+}
+
+.gacha-controls {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.gacha-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--weight-medium);
+}
+
+.gacha-note {
+  margin: 0;
+  font-size: var(--size-xs);
+  color: var(--text-muted);
+}
+
+/* The locked worth of a gacha task, shown where the size picker would be. */
+.gacha-worth {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
 }
 
 /* ---------- floating points / confetti ---------- */

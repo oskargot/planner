@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db.js';
-import { uncompleteTask, SIZE_POINTS } from '../db/actions.js';
+import { uncompleteTask, taskPoints } from '../db/actions.js';
 import { logicalDay, prettyDay } from '../db/time.js';
 import Check from '../components/Check.jsx';
 import { itemAccent } from '../components/ColorPicker.jsx';
@@ -42,7 +42,7 @@ export default function TasksDone() {
               <div className="grow">
                 <div className="item-title">{t.title}</div>
               </div>
-              <span className="size-chip">+{SIZE_POINTS[t.size]}</span>
+              <span className="size-chip">+{taskPoints(t)}</span>
             </div>
           ))}
         </section>

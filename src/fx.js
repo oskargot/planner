@@ -1,7 +1,7 @@
 // Tiny DOM effects: floating points and confetti bursts (§8 "digital flair").
 // All of it respects the motion toggle and prefers-reduced-motion.
 
-function motionOff() {
+export function motionOff() {
   return (
     document.documentElement.dataset.motion === 'off' ||
     window.matchMedia('(prefers-reduced-motion: reduce)').matches

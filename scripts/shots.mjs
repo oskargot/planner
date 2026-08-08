@@ -224,16 +224,24 @@ function buildSeed() {
 
 const SEED = buildSeed();
 
+// Section roots are dashboards now (design.md §1); the old root pages each
+// moved one level down and keep their shot names, so before/after runs stay
+// comparable screen by screen.
 const SCREENS = [
   ['home', '/'],
-  ['tasks', '/tasks'], ['tasks-done', '/tasks/done'],
-  ['habits', '/habits'], ['habits-month', '/habits/month'],
+  ['tasks-dash', '/tasks'],
+  ['tasks', '/tasks/todo'], ['tasks-done', '/tasks/done'],
+  ['habits-dash', '/habits'],
+  ['habits', '/habits/today'], ['habits-month', '/habits/month'],
   ['habits-archived', '/habits/archived'],
   ['chores', '/habits/chores'],
-  ['studio', '/studio'], ['studio-project', '/studio/p/seed-p0'],
-  ['shop', '/shop'], ['shop-inventory', '/shop/inventory'],
+  ['studio-dash', '/studio'],
+  ['studio', '/studio/active'], ['studio-project', '/studio/p/seed-p0'],
+  ['shop-dash', '/shop'],
+  ['shop', '/shop/store'], ['shop-inventory', '/shop/inventory'],
   ['ledger', '/settings/ledger'], ['stats', '/settings/stats'],
-  ['tumbler', '/tumbler'], ['mine', '/tumbler/mine'],
+  ['tumbler-dash', '/tumbler'],
+  ['tumbler', '/tumbler/barrels'], ['mine', '/tumbler/mine'],
   ['tumbler-shelf', '/tumbler/shelf'], ['tumbler-collection', '/tumbler/collection'],
   ['settings', '/settings'],
 ];
@@ -242,9 +250,9 @@ const SCREENS = [
 // token that never got a dark value, and the screens with the most furniture
 // (the shopfront, the shelves) are where that shows up first.
 const DARK_SCREENS = [
-  ['home', '/'], ['stats', '/settings/stats'], ['tasks', '/tasks'],
-  ['chores', '/habits/chores'],
-  ['shop', '/shop'], ['mine', '/tumbler/mine'], ['tumbler-shelf', '/tumbler/shelf'],
+  ['home', '/'], ['stats', '/settings/stats'], ['tasks', '/tasks/todo'],
+  ['tasks-dash', '/tasks'], ['chores', '/habits/chores'],
+  ['shop', '/shop/store'], ['mine', '/tumbler/mine'], ['tumbler-shelf', '/tumbler/shelf'],
 ];
 
 const VIEWPORTS = [
@@ -297,17 +305,27 @@ for (const [vpName, viewport, dsf] of VIEWPORTS) {
 
   // A task open: the detail pane on a wide screen, the subtask drawer on a
   // phone. Both are the same click, and neither is reachable by URL.
-  await page.goto(`http://localhost:${PORT}/tasks`, { waitUntil: 'networkidle' });
+  await page.goto(`http://localhost:${PORT}/tasks/todo`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(400);
   await page.locator('.list-item').nth(2).click();
   await page.waitForTimeout(400);
   await page.screenshot({ path: join(OUT, `${vpName}-tasks-open.png`) });
 
-  await page.goto(`http://localhost:${PORT}/tasks`, { waitUntil: 'networkidle' });
+  await page.goto(`http://localhost:${PORT}/tasks/todo`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(400);
   await page.locator('.check').first().click();
   await page.waitForTimeout(500);
   await page.screenshot({ path: join(OUT, `${vpName}-toast.png`) });
+
+  // The gacha, pulled — it lives on the Tasks dashboard. Types a task and
+  // pulls the crank, then waits out the shake: the shot is the prize in the
+  // tray, which is also the only proof the whole roll-store-reveal path runs.
+  await page.goto(`http://localhost:${PORT}/tasks`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  await page.locator('.gacha input').fill('Descale the kettle');
+  await page.locator('.gacha .btn.primary').click();
+  await page.waitForTimeout(1400);
+  await page.screenshot({ path: join(OUT, `${vpName}-gacha-reveal.png`) });
 
   // The mine, dug in. A fresh board is a blank grid of covered stone, which
   // says nothing about the game — so drive the real gestures and let the real
