@@ -654,6 +654,392 @@ h1, h2, h3 {
   overflow-wrap: anywhere;
 }
 
+/* ---------- home: the wall (wide) ---------- */
+
+/*
+ * design.md §1 gave Home five cards; the iPad gave them a quarter of the
+ * screen in empty margin and pushed the fifth below the fold. The wall is the
+ * wide answer: three columns sized to their content, filling the screen with
+ * no scroll — the whole of Home at once, which is the only version of a
+ * landing screen worth landing on.
+ *
+ * Everything here is inside `min-width: 900px`. Below it the phone's column of
+ * cards is untouched, and Home.jsx renders that tree instead.
+ */
+@media (min-width: 900px) {
+  /*
+   * Home is the one page with no sub-pages, so the 120px the rail's flyout
+   * lands in is 120px of nothing here. Dropping it on `/` is a route check
+   * rather than a layout trick because the flyout is absolutely positioned:
+   * without the reserve it would sit ON the first panel, and this is the one
+   * page where it can never open.
+   *
+   * The pane also stops scrolling: the wall is a fixed box, and the only
+   * things that scroll are the insides of panels.
+   */
+  .page-home {
+    overflow: hidden;
+    padding: var(--space-4) var(--space-5);
+    padding-top: calc(var(--space-4) + env(safe-area-inset-top));
+  }
+
+  .page-home > .page-inner {
+    max-width: none;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .home-wall {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  /* One line, not two: hello, then the flavor line beside it, then the day's
+     earnings pushed right. No wordmark and no balance — the rail carries the
+     balance on every screen, and Home repeating it is the duplication
+     design.md §2 is about.
+     The reserved height is on the ROW. On one line a min-height on the flavor
+     line reserves nothing, because the hello next to it is already taller. */
+  .greeting-row {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    min-width: 0;
+    min-height: calc(var(--size-xl) * 1.3);
+  }
+
+  .greeting-row .greeting-hello {
+    font-size: var(--size-xl);
+    white-space: nowrap;
+  }
+
+  .greeting-row .greeting-line {
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The ratios are the content's, not a rhythm: Habits needs the month
+     calendar beside its rows, Tasks needs a title's worth of line length, and
+     the third column holds three short digests. */
+  .wall-grid {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1.25fr 1fr 0.9fr;
+    gap: var(--space-3);
+  }
+
+  .wall-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-height: 0;
+  }
+  /* Shop is last and takes what's left, so the column always reaches the
+     bottom edge whatever the barrels and projects need. */
+  .wall-col > .panel:last-child { flex: 1; min-height: 0; }
+
+  /*
+   * A panel is not a card. A card carries the rainbow top stripe, the accent
+   * dot and the fading header rule; three of those side by side at this size
+   * was more furniture than content. The section tint in the header band is a
+   * panel's whole identity — and it stays in the band, so no text's contrast
+   * ever rests on it.
+   */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--bg-surface);
+    border: var(--border-hairline);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+  }
+
+  /* The header band is the door into the section, the way a card's "open"
+     link is. */
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: var(--panel-soft);
+    border-bottom: var(--border-hairline);
+  }
+
+  .panel-title {
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: var(--size-md);
+    color: var(--panel-ink);
+  }
+
+  /* One short true fact, in the section's own ink. */
+  .panel-fact {
+    flex-shrink: 0;
+    font-size: var(--size-sm);
+    font-weight: var(--weight-medium);
+    color: var(--panel-ink);
+  }
+
+  .panel-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4) var(--space-4);
+  }
+
+  .panel-body > .empty { padding: var(--space-3); }
+
+  /* The right column is three digests rather than two working lists, so it
+     runs tighter. */
+  .wall-col .panel-head { padding: var(--space-2) var(--space-3); }
+  .wall-col .panel-body {
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3) var(--space-3);
+  }
+
+  /* ---- rows ---- */
+
+  .wall-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-height: 0;
+  }
+  /* A panel is a fixed box now, so a list that outgrows it is a scroll inside
+     the panel rather than a page that reflows. */
+  .wall-rows.scrolls { flex: 1; overflow-y: auto; }
+
+  .wall-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--row-accent, var(--border-color));
+  }
+  .wall-row.done { background: var(--row-soft); }
+
+  .wall-row .check { width: 24px; height: 24px; }
+
+  /* Habits run tighter than tasks: the calendar above them takes most of the
+     panel, and a month plus five habits plus a ready chore has to fit without
+     the last row being half a scroll away. */
+  .panel-habits .wall-row { padding: var(--space-1) var(--space-3); }
+
+  .wall-emoji { flex-shrink: 0; font-size: var(--size-sm); }
+
+  .wall-name {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--size-sm);
+    font-weight: var(--weight-medium);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .wall-row.done .wall-name { color: var(--text-secondary); }
+
+  /* The one place a size shows on a task row: this panel is the working list
+     rather than a preview of one. The bare letter, not the chip — the size is
+     still something you set once. */
+  .wall-size {
+    flex-shrink: 0;
+    font-size: var(--size-2xs);
+    font-weight: var(--weight-bold);
+    color: var(--text-muted);
+  }
+
+  /* What a ready chore pays, where a habit's streak sits. */
+  .wall-pay {
+    flex-shrink: 0;
+    font-size: var(--size-xs);
+    font-weight: var(--weight-bold);
+    color: var(--color-points);
+  }
+
+  .wall-divider {
+    margin-top: var(--space-1);
+    padding-top: var(--space-2);
+    border-top: var(--border-hairline);
+    font-size: var(--size-xs);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* Studio and Shop are lines, not rows: no checkbox, nothing to stripe. */
+  .wall-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .wall-line {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  /* Takes the panel's accent through the custom property the header set, so a
+     touch pill is always its own section's colour. */
+  .pill-btn {
+    flex-shrink: 0;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-full);
+    background: var(--panel-soft);
+    color: var(--panel-ink);
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: var(--size-xs);
+  }
+
+  /* ---- the habits panel's calendar ---- */
+
+  /* The label row carries the link here and the grid is inert — it sits above
+     tappable habit rows, and a grid that swallows a tap meant for a cell is
+     worse than one that ignores it. */
+  .panel-habits .month-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+    margin-bottom: var(--space-1);
+  }
+  .panel-habits .month-label { margin-bottom: 0; text-align: left; }
+  .month-more {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    font-size: var(--size-xs);
+    color: var(--text-muted);
+  }
+  .panel-habits .heat-grid { gap: 3px; }
+  .panel-habits .heat-cell { font-size: var(--size-xs); }
+
+  /* ---- the tasks panel's add box ---- */
+
+  /* Pinned to the foot of the panel: `margin-top: auto` alone would leave it
+     inside the body's padding, so it bleeds back out to the panel's edges and
+     draws its own rule. */
+  .wall-add {
+    margin: auto calc(-1 * var(--space-4)) calc(-1 * var(--space-4));
+    padding: var(--space-2) var(--space-4) var(--space-3);
+    border-top: var(--border-hairline);
+  }
+
+  .add-pill {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-full);
+    background: var(--bg-surface-alt);
+    border: var(--border-hairline);
+    color: var(--text-muted);
+  }
+  /* The ring belongs to the pill, not to the field inside it — a rectangle
+     drawn inside a rounded pill is the thing that looks broken. */
+  .add-pill:focus-within { outline: 2px solid var(--accent-5); outline-offset: 1px; }
+
+  .add-pill input {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    font-size: var(--size-sm);
+  }
+  .add-pill input:focus { outline: none; }
+
+  /* ---- the rocks panel's barrel wells ---- */
+
+  /* The one place on the wall with material: a barrel is a hole in the bench,
+     not a card on it. Flat themes set --well-inset to none and the row still
+     reads, because the fill says ready and the badge says open. */
+  .barrel-well {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface-alt);
+    box-shadow: var(--well-inset);
+    color: var(--accent-6-ink);
+  }
+  .barrel-well.ready { background: var(--accent-6-soft); }
+  .barrel-well .wall-name { color: var(--text-primary); }
+
+  /* ---- the shop panel's uncollected purchases ---- */
+
+  /* Bought and not yet opened — the only line in this panel about something
+     you already own, so it goes first and it's the only one with a fill.
+     Collecting still happens on the Inventory page: the wall says what's
+     waiting, it doesn't spend or redeem anything. */
+  .shop-waiting {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-md);
+    background: var(--accent-4-soft);
+    color: var(--color-success);
+  }
+  .shop-waiting .wall-name { color: var(--text-primary); }
+  .waiting-tag {
+    flex-shrink: 0;
+    font-size: var(--size-xs);
+    font-weight: var(--weight-bold);
+    color: var(--color-success);
+  }
+
+  /* ---- keycaps ---- */
+
+  /* Hidden by default and shown only where a keyboard is likely (below) — a
+     finger-only session gets no shortcut hints. */
+  .keycap {
+    display: none;
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: var(--size-xs);
+    color: var(--text-muted);
+  }
+}
+
+/* A trackpad keyboard case answers true here and a bare iPad answers false,
+   which is exactly the question "is there a keyboard attached" — and it's a
+   media query rather than a setting for the same reason the long-press hint's
+   wording is. */
+@media (min-width: 900px) and (hover: hover) and (pointer: fine) {
+  .keycap { display: inline; }
+  /* The same background step .rail-points uses. No underline: the whole band
+     is the target, and an underlined title inside a tinted bar reads as two
+     links. */
+  .panel-head:hover { background: var(--bg-sunken); }
+  /* An outline in the section's ink rather than a fill: --panel-ink is a
+     deep accent on Paper and a pale one on Dark, so a swap to it as a
+     background would need a different foreground in each theme. */
+  .pill-btn:hover { box-shadow: inset 0 0 0 1.5px var(--panel-ink); }
+}
+
 /* ---------- generic bits ---------- */
 
 .row {

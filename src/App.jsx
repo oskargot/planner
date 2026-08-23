@@ -86,7 +86,17 @@ export default function App() {
           <Icon name="alert" size={16} /> {bootError}
         </div>
       )}
-      <main className="page" key={section.id} data-dir={dir}>
+      {/* `page-home` drops the 120px the rail's sub-page flyout lands in and
+          stops the pane scrolling: Home has no sub-pages, so nothing can ever
+          open into that gutter, and its wide layout is a fixed wall of panels
+          rather than a column that grows. A route check rather than :has(),
+          because the flyout's absolute position means getting it wrong puts a
+          panel under a floating panel. */}
+      <main
+        className={`page${location.pathname === '/' ? ' page-home' : ''}`}
+        key={section.id}
+        data-dir={dir}
+      >
         <div className={`page-inner page-slide-${dir}`}>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -180,6 +190,17 @@ function useShortcuts({ openPalette, enabled }) {
       }
       if (e.key === 'n') {
         e.preventDefault();
+        // Home's wide layout grew an add box of its own, so on Home the
+        // shortcut is a focus rather than a navigation — being thrown to
+        // another page to type a task you could have typed here is the thing
+        // the box was added to stop. Asking the DOM whether the box is there
+        // is what makes this correct on a phone too: Home has no add box down
+        // there, nothing matches, and the old navigation still happens.
+        const here = document.querySelector('[data-home-add]');
+        if (here) {
+          here.focus();
+          return;
+        }
         // Straight to the To Do page, not the Tasks dashboard — the whole job
         // of this shortcut is putting the cursor in the add box, and the
         // dashboard doesn't have one. The timestamp is the point: navigating

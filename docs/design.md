@@ -70,6 +70,11 @@ This also answers a question raised while specifying §1 and left open: what
 goes in the *other* top corner on a phone. Nothing does. The question assumed
 two balances need two homes; they need one home and a rule about who's in it.
 
+**Shipped in part:** Home's wide layout (the wall, CLAUDE.md) drops the
+wordmark and the balance from its header on exactly this argument — the rail
+already carries the balance on every screen. The rest of §2 is still unbuilt,
+and the phone's top row still isn't persistent.
+
 ### The frame follows you
 
 On a phone today, the balance and the gear exist in Home's header and nowhere
