@@ -76,8 +76,10 @@ troubleshooting in `deploy/README.md`.
 
 `main` is what Oskar pulls on jellybot, and it's kept fast-forwarded to
 whatever the current working branch is after each push. Current branch is
+`claude/home-page-redesign-70jl3q` (the wall: Home's wide layout rebuilt from
+a design handoff); before it were
 `claude/planner-gacha-machine-task-61aau8` (the task gacha from mochi house,
-rebuilt); before it were
+rebuilt),
 `claude/planner-mining-organization-qnzqlh` (the nav reshuffle — chores under
 habits, Rocks split back out of Shop — plus the workshop split and the
 extraction-cost fix),
@@ -91,8 +93,8 @@ tumbler), `claude/iphone-planner-redesign-p6fw8r` (the iPhone pass) and
 `claude/oskar-planner-v1-wqpzus` (v1). Both pushes every time:
 
 ```bash
-git push -u origin claude/planner-gacha-machine-task-61aau8
-git push origin claude/planner-gacha-machine-task-61aau8:main
+git push -u origin claude/home-page-redesign-70jl3q
+git push origin claude/home-page-redesign-70jl3q:main
 ```
 
 ## Architecture map
@@ -126,7 +128,8 @@ src/
                      Icon (the whole inline-SVG glyph set),
                      Palette (⌘K), Toasts (the undo rail),
                      MiniMonth (the heat calendar Home and the Habits
-                     dashboard share),
+                     dashboard share; `inlineLink` moves the link into the
+                     label row and leaves the grid inert),
                      Gacha (the task gacha machine on the Tasks dashboard;
                      the economics live in actions.js, this is only the
                      reveal)
@@ -143,7 +146,8 @@ src/
   pages/             one file per screen — EXCEPT Studio.jsx, which is both
                      /studio/active and /studio/p/:id (see the two-pane note
                      below). The five *Dash.jsx files are the section
-                     dashboards (design.md §1)
+                     dashboards (design.md §1). Home.jsx is two layouts over
+                     one set of data hooks (the wall — see below)
 server/
   index.js           GET/POST /api/sync, LWW upserts, serves dist/, cache
                      headers, additive column migrations (ensureColumn)
@@ -394,8 +398,13 @@ odds. If a change would create a reason to feel late, it's the wrong change.
   ever worth it), and the fact that at prestige 0 the mine mostly yields
   Chipped/Clouded — the grades you already have — so extraction fills new
   collection squares more slowly than it looks like it should.
-- Task rows no longer show a size chip anywhere (list or Home) — the size is
-  in the editor and the detail pane only. It's something you set once.
+- Task rows no longer show a size chip anywhere (list or phone Home) — the
+  size is in the editor and the detail pane only. It's something you set once.
+  The wall's Tasks panel is the one exception, and it shows the bare letter
+  rather than the chip: that panel is the working list rather than a preview
+  of one, and which of two jobs to pick next is partly how big they are. The
+  handoff raised the conflict itself and left it as a choice; if it reads as
+  noise, deleting `.wall-size` costs the layout nothing.
 - The gacha is brand new and untuned: pool 1/2/3/5/8/13, uniform draw. Rows
   deliberately don't show a gacha task's worth (same set-once rule as size);
   it's in the editor, the detail pane, and the Done list's +N chip. The
@@ -406,6 +415,36 @@ odds. If a change would create a reason to feel late, it's the wrong change.
   annoys, the group chips are the half to hide behind a toggle.
 - Home habits calendar shows the calendar month; a rolling ~5-week window
   was floated as an alternative if early-month emptiness annoys.
+- **Home has two layouts, and the wide one is "the wall"** — three columns of
+  panels filling an 11" iPad with no scroll, built from a design handoff. The
+  branch is `useWide()` in Home.jsx rather than CSS, because the two really are
+  different trees; what is NOT duplicated is the reading, since each section's
+  data comes from one hook (`useHomeHabits`, `useOpenTasks`, `useStaleProjects`,
+  `useBarrelSlots`, `useShopDigest`) that both layouts call. A card and its
+  panel can't disagree about what's on the list.
+  - **A panel is not a card.** No rainbow stripe, no accent dot, no fading
+    header rule: three cards' worth of furniture side by side was more
+    decoration than content. The section tint in the header band is a panel's
+    whole identity, and it stays in the BAND — no text's contrast rests on it,
+    which is what keeps Mono honest.
+  - Column ratios (1.25fr / 1fr / 0.9fr) are the content's, not a rhythm:
+    Habits needs the calendar beside its rows, Tasks needs line length, and the
+    third column holds three short digests.
+  - The wordmark and the balance leave Home entirely up there. The rail carries
+    the balance on every screen and repeating it is the duplication design.md
+    §2 argues against — this is the first piece of §2 to actually ship.
+  - `.page-home` (a route check in App.jsx, not `:has()`) drops the 120px the
+    rail's flyout lands in and stops the pane scrolling. Home is the one page
+    with no sub-pages, so nothing can ever open into that gutter; and the wall
+    is a fixed box, so the only things that scroll are panel bodies.
+  - The add-task pill in the Tasks panel is the one genuinely new capability,
+    and the reason `n` now focuses instead of navigating when a box is on
+    screen. It has no size picker on purpose — the pill is for getting a
+    thought out of your head before it evaporates, and it lands as a Medium.
+  - `--well-inset` is a new token (barrel rows; flat themes set it to `none`).
+  - Untested by living with it: the panels' internal scrolls, whether the size
+    letter earns its place, and whether the Habits panel is right to spend
+    half its height on the calendar.
 - Home is one card per row on a phone and TWO columns above 700px: habits →
   studio → inventory on the left, tasks → rocks on the right, placed by
   explicit `grid-column` so the DOM keeps the phone's reading order. It was
