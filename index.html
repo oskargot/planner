@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en" data-theme="paper">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#f7f6fa" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <title>Planner</title>
+    <script>
+      // First paint, before React or IndexedDB. The real preference lives in
+      // meta and App.jsx re-applies it a moment later; this only stops a dark
+      // boot from flashing white while the database opens.
+      try {
+        var p = localStorage.getItem('theme-pref') || 'auto';
+        var t =
+          p === 'auto'
+            ? matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'paper'
+            : p;
+        document.documentElement.dataset.theme = t;
+        document.documentElement.dataset.themePref = p;
+      } catch (e) {}
+    </script>
+    <script type="module" crossorigin src="/assets/index-CPO0LZfl.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BntAbjFs.css">
+  <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
